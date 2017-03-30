@@ -17,7 +17,7 @@ char *status_str[2] = {"UNSATISFIABLE", "SATISFIABLE"};
 typedef struct c3_t {
   int32_t valnum;
   int32_t disjnum;
-  C3List **cnf; // <C3List[i] = i-th Disjunction>
+  C3List *cnf; // <cnf[i] = i-th Disjunction>
 }C3;
 static C3 c3;
 
@@ -51,24 +51,25 @@ static int c3_compare_value (const int32_t *a, const int32_t *b) {
 }
 
 void c3_print_cnf (C3 *c3) {
-  int32_t i;
-  C3ListIter *iter;
+  C3ListIter *iter, *iter2;
+  C3List *disj;
   int32_t *num;
   //printf ("size=%d, val=%d\n", c3->disjnum, c3->valnum);
-  for (i = 0; i < c3->disjnum; i++) {
+  c3_list_foreach (c3->cnf, iter, disj) {
+    if (!disj) continue;
     printf ("(");
-    c3_list_foreach (c3->cnf[i], iter, num) {
+    c3_list_foreach (disj, iter2, num) {
       if (*num < 0) {
         printf ("!x%d", -(*num));
       } else {
         printf ("x%d", *num);
       }
-      if (iter != c3->cnf[i]->tail) { //XXX
+      if (iter2 != disj->tail) { //XXX
         printf (" or ");
       }
     }
     printf (")");
-    if (i == c3->disjnum - 1) {
+    if (iter == c3->cnf->tail) {
       printf ("\n");
     } else {
       printf (" and ");
@@ -112,24 +113,27 @@ static int32_t get_digit_long (char **p) {
 int c3_parse_cnffile (C3 *c3, char *data) {
   int32_t inum = 0, i = 0;
   int32_t *inump = NULL;
+  C3ListIter *iter;
+  C3List *disj;
   bool valid = false;
 
   while (*data) {
     if (valid) {
-      c3->cnf = (C3List**) calloc (c3->disjnum, sizeof(C3List*));
+      printf ("size=%d, val=%d\n", c3->disjnum, c3->valnum);
       for (i = 0; i < c3->disjnum; i++) {
-        c3->cnf[i] = c3_list_new ();
+        disj = c3_list_new ();
+        c3_list_append (c3->cnf, disj);
         /* disjunctive inputs must be terminated by last '0' */
         while (inum = get_digit_long (&data)) {
           if (!(++data)) {// inum != 0 && data_next = '\0' (i.e not ended by '0')
-            c3_list_free (c3->cnf[i]);
-            free (c3->cnf);
+            c3_list_free (disj);
+            c3_list_free (c3->cnf);
             goto fail;
           }
           inump = malloc (sizeof(int));
           *inump = inum;
           printf ("%d ", inum);
-          c3_list_append (c3->cnf[i], inump);
+          c3_list_append (disj, inump);
         }
         printf ("\n");
         data++; //skip '\n'
@@ -175,34 +179,39 @@ fail:
 
 /* one literal rule */
 static void _c3_dpll_simplify1(C3 *c3, int8_t *res) {
-  int32_t i, j;
   bool simplify;
-  C3ListIter *iter;
+  C3ListIter *iter, *iter2;
+  C3List *disj, *disj2;
   do {
     simplify = false;
-    for (i = 0; i < c3->disjnum; i++) {
-      if (c3_list_length (c3->cnf[i]) == 1) {
+    c3_list_foreach (c3->cnf, iter, disj) {
+      if (c3_list_length (disj) == 1) {
         /* Found alone literal */
-        int32_t* onep = c3_list_head_data (c3->cnf[i]);
-        res[i] = (*onep < 0) ? -1 : 1;
+        int32_t* onep = c3_list_head_data (disj);
+        int32_t oneab = abs(*onep);
+        //printf ("found one literal %d\n", oneab);
+        res[oneab - 1] = (*onep < 0) ? -1 : 1;
         simplify = true;
-        for (j = 0; j < c3->disjnum; j++) {
-          if (i == j || !c3->cnf[j]) continue; // must not j=i
-          if (iter = c3_list_find (c3->cnf[j], (void*)onep, c3_compare_symbol)) {
-            int32_t* found = c3_list_get_data (iter);
-            //printf ("found: (%d,%d)\n",i,j);
+        c3_list_foreach (c3->cnf, iter2, disj2) {
+          if (disj == disj2) continue; // must not iterate same disjunction
+          C3ListIter *fnd;
+          if (fnd = c3_list_find (disj2, (void*)onep, c3_compare_symbol)) {
+            int32_t* found = c3_list_get_data (fnd);
+            //printf ("found: %d\n",*found);
             if (*onep < 0 && *found < 0 || *onep > 0 && *found > 0) {
               /* same literal (same sign) */
               /* Delete all elements of list */
-              c3_list_clear (c3->cnf[j]);
+              c3_list_free (disj2);
+              iter2->data = 0; //XXX
             } else {
               /* different sign */
               /* Delete only one literal */
-              c3_listiter_delete (c3->cnf[j], iter);
+              c3_listiter_delete (disj2, fnd);
             }
           }
         }
-        c3_list_clear (c3->cnf[i]);
+        c3_list_free (disj);
+        iter->data = 0; //XXX
       }
     }
   } while (simplify);
@@ -233,12 +242,17 @@ C3_STATUS c3_derive_sat(C3 *c3, int8_t *res) {
   return C3_INVALID;
 }
 
+void c3_init (C3 *c3) {
+  c3->cnf = c3_list_new ();
+}
+
 void c3_fini (C3 *c3) {
-  int32_t i;
-  for (i = 0; i < c3->disjnum; i++) {
-    c3_list_free (c3->cnf[i]);
+  C3ListIter *iter;
+  C3List *disj;
+  c3_list_foreach (c3->cnf, iter, disj) {
+    c3_list_free (disj);
   }
-  free (c3->cnf);
+  c3_list_free (c3->cnf);
 }
 
 char* c3_file_read (FILE *fp, long *len) {
@@ -299,6 +313,9 @@ int main(int argc, char **argv, char **envp) {
   }
   free ((void*)cnf_path);
 
+  /* Init */
+  c3_init (&c3);
+
   cnf = c3_file_read (cnfp, NULL);
   if (!cnf) {
     fclose (cnfp);
@@ -316,6 +333,6 @@ int main(int argc, char **argv, char **envp) {
 
   /* Finish */
   fclose (cnfp);
-  free (res);
-  c3_fini (&c3);
+  //free (res);
+  //c3_fini (&c3);
 }
