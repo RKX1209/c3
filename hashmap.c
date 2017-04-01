@@ -23,9 +23,25 @@ C3Hmap *c3_hmap_new (size_t size) {
   return hmap;
 }
 
+void c3_hmap_free (C3Hmap *hmap) {
+  int32_t i;
+  C3HmapIter *entry, *next;
+  for (i = 0; i < hmap->length; i++) {
+    entry = hmap->table[i];
+    while (entry) {
+      next = entry->next;
+      free (entry->key);
+      free (entry->data);
+      free (entry);
+      entry = next;
+    }
+    hmap->table[i] = NULL;
+  }
+}
+
 unsigned long c3_hash (C3Hmap *hmap, char *key) {
   int32_t i = 0;
-  unsigned long hashval;
+  unsigned long hashval = 0;
   while (hashval < ULONG_MAX && i < strlen (key)) {
     hashval = hashval << 8;
     hashval += key[i];
@@ -63,6 +79,7 @@ bool c3_hmap_add (C3Hmap *hmap, char *key, void *value) {
   if (entry != NULL && strcmp (key, entry->key) == 0) {
     free (entry->data);
     entry->data = value;
+    //printf ("exist ");
   } else {
     /* couldn't find it. add new one */
     newent = c3_hmap_entry_new (key, value);
@@ -80,7 +97,9 @@ bool c3_hmap_add (C3Hmap *hmap, char *key, void *value) {
       newent->next = last->next;
       last->next = newent;
     }
+    //printf ("Add ");
   }
+  //printf ("set: hash=%d key=%s\n", hash, key);
   return true;
 }
 
@@ -94,6 +113,7 @@ void *c3_hmap_get (C3Hmap *hmap, char *key) {
   C3HmapIter *entry;
   unsigned long hash;
   hash = c3_hash (hmap, key);
+  //printf ("get: hash=%d key=%s\n", hash, key);
   for (entry = hmap->table[hash]; entry; entry = entry->next) {
     if (strcmp (entry->key, key) == 0) {
       return entry;
