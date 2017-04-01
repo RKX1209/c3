@@ -2,7 +2,7 @@
 CC 			=		gcc
 CXX			=		g++
 MAKE		=		make
-OBJS		=		core.o list.o
+OBJS		=		core.o list.o hashmap.o
 C3			=		c3
 INCLUDE =		include
 CFLAGS	=		-I$(INCLUDE)
