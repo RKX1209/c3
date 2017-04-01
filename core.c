@@ -179,8 +179,9 @@ fail:
 }
 
 /* one literal rule */
-static void _c3_dpll_simplify1(C3 *c3, int8_t *res) {
+static bool _c3_dpll_simplify1(C3 *c3, int8_t *res) {
   bool simplify;
+  bool updated = false;
   C3ListIter *iter, *iter2, *next, *next2;
   C3List *disj, *disj2;
   do {
@@ -221,26 +222,28 @@ static void _c3_dpll_simplify1(C3 *c3, int8_t *res) {
         }
         c3_list_clear (disj);
         c3_listiter_delete (c3->cnf, iter);
+        updated = true;
       }
       iter = next;
     }
   } while (simplify);
+  return updated;
 }
 
 /* pure literal rule */
-static void _c3_dpll_simplify2(C3 *c3, int8_t *res) {
+static bool _c3_dpll_simplify2(C3 *c3, int8_t *res) {
   C3ListIter *iter, *iter2, *next;
   C3List *disj;
   int32_t *num, i;
   bool *flag;
+  bool updated = false;
 
   /* Memorize all symbols */
   c3_list_foreach (c3->cnf, iter, disj) {
-    if (!disj) continue;
     c3_list_foreach (disj, iter2, num) {
       flag = malloc (sizeof(bool));
       if (!flag) {
-        return;
+        return false;
       }
       *flag = true;
       c3_hmap_add_int32 (c3->literals, *num, flag);
@@ -249,6 +252,9 @@ static void _c3_dpll_simplify2(C3 *c3, int8_t *res) {
 
   /* Delete if literal is pure */
   for (i = 1; i <= c3->valnum; i++) {
+    if (!c3_hmap_get_int32 (c3->literals, i)) {
+      continue;
+    }
     if (c3_hmap_get_int32 (c3->literals, -i)) {
       /* not pure. */
       continue;
@@ -264,15 +270,16 @@ static void _c3_dpll_simplify2(C3 *c3, int8_t *res) {
       }
       iter = next;
     }
+    updated = true;
   }
+  c3_hmap_clear (c3->literals);
+  return updated;
 }
 
 /* Simplification rules */
 static void _c3_dpll_simplify(C3 *c3, int8_t *res) {
-  /* one literal rule */
-  _c3_dpll_simplify1(c3, res);
-  /* pure literal rule */
-  _c3_dpll_simplify2(c3, res);
+  while (_c3_dpll_simplify1(c3, res) ||
+        _c3_dpll_simplify2(c3, res) ) c3_print_cnf (c3);
 }
 
 /* DPLL algorithm */

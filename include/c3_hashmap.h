@@ -17,6 +17,7 @@ typedef struct c3_hmap_t {
 }C3Hmap;
 
 C3Hmap *c3_hmap_new (size_t size);
+void c3_hmap_clear (C3Hmap *hmap);
 void c3_hmap_free (C3Hmap *hmap);
 bool c3_hmap_add (C3Hmap *hmap, char *key, void *value);
 bool c3_hmap_add_int32 (C3Hmap *hmap, int32_t key, void *value);
