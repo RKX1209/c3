@@ -56,7 +56,6 @@ void c3_print_cnf (C3 *c3) {
   int32_t *num;
   //printf ("size=%d, val=%d\n", c3->disjnum, c3->valnum);
   c3_list_foreach (c3->cnf, iter, disj) {
-    if (!disj) continue;
     printf ("(");
     c3_list_foreach (disj, iter2, num) {
       if (*num < 0) {
@@ -180,20 +179,27 @@ fail:
 /* one literal rule */
 static void _c3_dpll_simplify1(C3 *c3, int8_t *res) {
   bool simplify;
-  C3ListIter *iter, *iter2;
+  C3ListIter *iter, *iter2, *next, *next2;
   C3List *disj, *disj2;
   do {
     simplify = false;
-    c3_list_foreach (c3->cnf, iter, disj) {
+    iter = c3->cnf->head;
+    while (iter && (disj = iter->data)) {
+      next = iter->n;
       if (c3_list_length (disj) == 1) {
         /* Found alone literal */
         int32_t* onep = c3_list_head_data (disj);
         int32_t oneab = abs(*onep);
-        //printf ("found one literal %d\n", oneab);
+        //printf ("found one literal %d\n", *onep);
         res[oneab - 1] = (*onep < 0) ? -1 : 1;
         simplify = true;
-        c3_list_foreach (c3->cnf, iter2, disj2) {
-          if (disj == disj2) continue; // must not iterate same disjunction
+        iter2 = c3->cnf->head;
+        while (iter2 && (disj2 = iter2->data)) {
+          next2 = iter2->n;
+          if (disj == disj2) {  // must not iterate same disjunction
+            iter2 = next2;
+            continue;
+          }
           C3ListIter *fnd;
           if (fnd = c3_list_find (disj2, (void*)onep, c3_compare_symbol)) {
             int32_t* found = c3_list_get_data (fnd);
