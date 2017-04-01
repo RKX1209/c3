@@ -23,7 +23,7 @@ C3Hmap *c3_hmap_new (size_t size) {
   return hmap;
 }
 
-void c3_hmap_free (C3Hmap *hmap) {
+void c3_hmap_clear (C3Hmap *hmap) {
   int32_t i;
   C3HmapIter *entry, *next;
   for (i = 0; i < hmap->length; i++) {
@@ -37,6 +37,11 @@ void c3_hmap_free (C3Hmap *hmap) {
     }
     hmap->table[i] = NULL;
   }
+}
+
+void c3_hmap_free (C3Hmap *hmap) {
+  c3_hmap_clear (hmap);
+  free (hmap);
 }
 
 unsigned long c3_hash (C3Hmap *hmap, char *key) {
