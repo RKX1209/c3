@@ -6,9 +6,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <c3_list.h>
+#include <c3_hashmap.h>
 
 #define C3_INVALID -1   //error
-#define C3_UNSAT    0   //sunatisfiable
+#define C3_UNSAT    0   //unatisfiable
 #define C3_SAT      1   //satisfiable
 
 typedef uint8_t C3_STATUS;
@@ -18,6 +19,7 @@ typedef struct c3_t {
   int32_t valnum;
   int32_t disjnum;
   C3List *cnf; // <cnf[i] = i-th Disjunction>
+  C3Hmap *literals;
 }C3;
 static C3 c3;
 
@@ -207,25 +209,62 @@ static void _c3_dpll_simplify1(C3 *c3, int8_t *res) {
             if (*onep < 0 && *found < 0 || *onep > 0 && *found > 0) {
               /* same literal (same sign) */
               /* Delete all elements of list */
-              c3_list_free (disj2);
-              iter2->data = 0; //XXX
+              c3_list_clear (disj2);
+              c3_listiter_delete (c3->cnf, iter2);
             } else {
               /* different sign */
               /* Delete only one literal */
               c3_listiter_delete (disj2, fnd);
             }
           }
+          iter2 = next2;
         }
-        c3_list_free (disj);
-        iter->data = 0; //XXX
+        c3_list_clear (disj);
+        c3_listiter_delete (c3->cnf, iter);
       }
+      iter = next;
     }
   } while (simplify);
 }
 
 /* pure literal rule */
 static void _c3_dpll_simplify2(C3 *c3, int8_t *res) {
+  C3ListIter *iter, *iter2, *next;
+  C3List *disj;
+  int32_t *num, i;
+  bool *flag;
 
+  /* Memorize all symbols */
+  c3_list_foreach (c3->cnf, iter, disj) {
+    if (!disj) continue;
+    c3_list_foreach (disj, iter2, num) {
+      flag = malloc (sizeof(bool));
+      if (!flag) {
+        return;
+      }
+      *flag = true;
+      c3_hmap_add_int32 (c3->literals, *num, flag);
+    }
+  }
+
+  /* Delete if literal is pure */
+  for (i = 1; i <= c3->valnum; i++) {
+    if (c3_hmap_get_int32 (c3->literals, -i)) {
+      /* not pure. */
+      continue;
+    }
+    //printf ("pure literal %d\n", i);
+    iter = c3->cnf->head;
+    while (iter) {
+      disj = iter->data;
+      next = iter->n;
+      if (c3_list_find (disj, &i, c3_compare_value)) {
+        c3_list_clear (disj);
+        c3_listiter_delete (c3->cnf, iter);
+      }
+      iter = next;
+    }
+  }
 }
 
 /* Simplification rules */
@@ -250,6 +289,7 @@ C3_STATUS c3_derive_sat(C3 *c3, int8_t *res) {
 
 void c3_init (C3 *c3) {
   c3->cnf = c3_list_new ();
+  c3->literals = c3_hmap_new (50); //TODO: implment rehash function
 }
 
 void c3_fini (C3 *c3) {
@@ -259,6 +299,7 @@ void c3_fini (C3 *c3) {
     c3_list_free (disj);
   }
   c3_list_free (c3->cnf);
+  c3_hmap_free (c3->literals);
 }
 
 char* c3_file_read (FILE *fp, long *len) {
