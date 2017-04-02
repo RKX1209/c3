@@ -13,6 +13,7 @@ typedef struct c3_list {
   C3ListIter *head;
   C3ListIter *tail;
   size_t length;
+  bool sorted;
 }C3List;
 
 typedef int (*C3ListComparator)(const void *a, const void *b);
@@ -38,5 +39,8 @@ void *c3_list_get_data (C3ListIter *iter);
 bool c3_list_delete_data(C3List *list, void *data, C3ListComparator cmp);
 void c3_listiter_free(C3ListIter *iter);
 void c3_listiter_delete(C3List *list, C3ListIter *iter);
+
+/* sorting list */
+void c3_list_merge_sort(C3List *list, C3ListComparator cmp);
 
 #endif

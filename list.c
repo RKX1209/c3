@@ -1,5 +1,6 @@
 /* C3 Theorem Prover - Apache v2.0 - Copyright 2017 - rkx1209 */
 #include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <c3_list.h>
 
@@ -25,6 +26,7 @@ void c3_list_init(C3List *list) {
   list->head = NULL;
   list->tail = NULL;
   list->length = 0;
+  list->sorted = false;
 }
 
 void c3_listiter_delete(C3List *list, C3ListIter *iter) {
@@ -122,4 +124,101 @@ C3ListIter *c3_list_find(C3List *list, const void *data, C3ListComparator cmp) {
     }
   }
   return NULL;
+}
+
+C3ListIter *_c3_list_half_split (C3List *list, C3ListIter *head) {
+  C3ListIter *iter = head;
+  size_t sz = 0, i = 0;
+  while (iter) {
+    iter = iter->n;
+    sz++;
+  }
+  iter = head;
+  while (iter) {
+    if (i == sz / 2) {
+      break;
+    }
+    iter = iter->n;
+    i++;
+  }
+  if (iter->p) {
+    iter->p->n = NULL;
+    iter->p = NULL;
+  }
+  return iter;
+}
+
+C3ListIter *_c3_merge(C3List *list, C3ListIter *first, C3ListIter *second, C3ListComparator cmp) {
+  C3ListIter *iter, *iter2, *next;
+  iter = first;
+  // printf ("merge [");
+  // while (iter) {
+  //   printf ("%d ", *((int32_t*)iter->data));
+  //   iter = iter->n;
+  // }
+  // printf ("] ");
+  // iter = second;
+  // printf ("[");
+  // while (iter) {
+  //   printf ("%d ", *((int32_t*)iter->data));
+  //   iter = iter->n;
+  // }
+  // printf ("]\n");
+  iter = first;
+  iter2 = second;
+  while (iter && iter2) {
+    //printf ("cmp %d, %d\n", *((int32_t*)iter->data), *((int32_t*)iter2->data));
+    if (cmp (iter->data, iter2->data) > 0) {
+      next = iter2->n;
+      iter2->n = iter;
+      iter2->p = iter->p;
+      if (iter->p) {
+        //printf ("insert %d\n", *((int32_t*)iter->p->data));
+        iter->p->n = iter2;
+      } else {
+        first = iter2;
+      }
+      iter->p = iter2;
+      iter2 = next;
+    } else {
+      if (!iter->n) break;
+      iter = iter->n;
+    }
+  }
+  while (iter2) {
+    iter->n = iter2;
+    iter2->p = iter;
+    iter = iter->n;
+    iter2 = iter2->n;
+  }
+  return first;
+}
+
+C3ListIter *_c3_merge_sort(C3List *list, C3ListIter *head, C3ListComparator cmp) {
+  C3ListIter *second;
+
+  if (!head || !head->n) {
+    return head;
+  }
+
+  second = _c3_list_half_split (list, head);
+  head = _c3_merge_sort (list, head, cmp);
+  second = _c3_merge_sort (list, second, cmp);
+  return _c3_merge (list, head, second, cmp);
+}
+
+void c3_list_merge_sort(C3List *list, C3ListComparator cmp) {
+  if (!list) {
+    return;
+  }
+  if (!list->sorted && list->head && cmp) {
+    C3ListIter *iter;
+    list->head = _c3_merge_sort (list, list->head, cmp);
+    iter = list->head;
+    while (iter && iter->n) {
+      iter = iter->n;
+    }
+    list->tail = iter;
+  }
+  list->sorted = true;
 }
