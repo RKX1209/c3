@@ -8,6 +8,27 @@ size_t c3_list_length(C3List *list) {
   return list ? list->length : 0;
 }
 
+bool c3_list_empty(C3List *list) {
+  return list ? list->length == 0 : false;
+}
+
+C3List *c3_list_sub(C3List *list, C3ListIter *start, C3ListIter *end) {
+  C3List *clone;
+  C3ListIter *iter = start;
+  void *data;
+  clone = c3_list_new ();
+  while (iter) {
+    c3_list_append (clone, iter->data);
+    iter = iter->n;
+    if (iter == end) break;
+  }
+  return clone;
+}
+
+C3List *c3_list_clone(C3List *list) {
+  return c3_list_sub (list, list->head, list->tail);
+}
+
 void *c3_list_head_data (C3List *list) {
   if (list && list->head) {
     return list->head->data;
@@ -118,12 +139,22 @@ C3ListIter *c3_list_find(C3List *list, const void *data, C3ListComparator cmp) {
   C3ListIter *iter;
   void *v;
   c3_list_foreach (list, iter, v) {
-    /* TODO: Add compare function support*/
     if (cmp (data, v) == 0) {
       return iter;
     }
   }
   return NULL;
+}
+
+C3ListIter *_c3_list_split (C3List *list, C3ListIter *iter) {
+  if (!iter) {
+    return NULL;
+  }
+  if (iter->p) {
+    iter->p->n = NULL;
+    iter->p = NULL;
+  }
+  return iter;
 }
 
 C3ListIter *_c3_list_half_split (C3List *list, C3ListIter *head) {
@@ -141,11 +172,7 @@ C3ListIter *_c3_list_half_split (C3List *list, C3ListIter *head) {
     iter = iter->n;
     i++;
   }
-  if (iter->p) {
-    iter->p->n = NULL;
-    iter->p = NULL;
-  }
-  return iter;
+  return _c3_list_split (list, iter);
 }
 
 C3ListIter *_c3_merge(C3List *list, C3ListIter *first, C3ListIter *second, C3ListComparator cmp) {
@@ -221,4 +248,58 @@ void c3_list_merge_sort(C3List *list, C3ListComparator cmp) {
     list->tail = iter;
   }
   list->sorted = true;
+}
+
+C3ListIter *_c3_get_pivot (C3ListIter *head) {
+  return head;
+}
+
+C3ListIter *_c3_split_part (C3List *list, C3ListIter *head, C3ListIter *tail, C3ListIter *pivot, C3ListComparator cmp) {
+  int32_t li = 0, ri = 0;
+  C3ListIter *l = head, *r = tail, *t = head;
+  void *tmp;
+
+  while (t) {
+    ri++;
+    if (t == tail) break;
+    t = t->n;
+  }
+  while (li <= ri) {
+    while (li <= ri && cmp (l->data, pivot->data) < 0) {
+      l = l->n;
+      li++;
+    }
+    while (r != head && cmp (r->data, pivot->data) >= 0) {
+      r = r->p;
+      ri--;
+    }
+    if (li > ri) break;
+    tmp = r->data;
+    r->data = l->data;
+    l->data = tmp;
+    li++; ri--;
+  }
+  return l;
+}
+
+void _c3_quick_sort (C3List *list, C3ListIter *head, C3ListIter *tail, C3ListComparator cmp) {
+  if (!head || !tail) {
+    /* after only one element */
+    return;
+  }
+  if (head == tail) {
+    return;
+  }
+  C3ListIter *pivot = _c3_get_pivot (head);
+  C3ListIter *iter; void *data;
+  C3ListIter *split = _c3_split_part (list, head, tail, pivot, cmp);
+  _c3_quick_sort (list, head, split, cmp);
+  _c3_quick_sort (list, split->n, tail, cmp);
+}
+
+void c3_list_quick_sort(C3List *list, C3ListComparator cmp) {
+  if (!list || c3_list_empty (list)) {
+    return;
+  }
+  _c3_quick_sort (list, list->head, list->tail, cmp);
 }

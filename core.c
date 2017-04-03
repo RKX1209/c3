@@ -279,7 +279,7 @@ static bool _c3_dpll_simplify2(C3 *c3, int8_t *res) {
 /* Simplification rules */
 static void _c3_dpll_simplify(C3 *c3, int8_t *res) {
   while (_c3_dpll_simplify1(c3, res) ||
-        _c3_dpll_simplify2(c3, res) ) c3_print_cnf (c3);
+        _c3_dpll_simplify2(c3, res) );
 }
 
 /* DPLL algorithm */
@@ -342,6 +342,17 @@ FILE* c3_file_open (const char *file, const char *mode) {
   return fp;
 }
 
+/* XXX: uncessary function. should duplicate it */
+void c3_sort_cnf (C3 *c3) {
+  C3ListIter *iter;
+  C3List *disj;
+  int32_t *num;
+  c3_list_foreach (c3->cnf, iter, disj) {
+    //c3_list_merge_sort (disj, c3_compare_value);
+    c3_list_quick_sort (disj, c3_compare_value);
+  }
+}
+
 int main(int argc, char **argv, char **envp) {
   int c;
   FILE* cnfp;
@@ -380,6 +391,8 @@ int main(int argc, char **argv, char **envp) {
     free (cnf);
     return 0;
   }
+  c3_print_cnf (&c3);
+  c3_sort_cnf (&c3);
   c3_print_cnf (&c3);
   res = (int8_t*) calloc (c3.valnum, sizeof(int8_t));
   c3_derive_sat (&c3, res);

@@ -1,0 +1,4 @@
+c This is simple CNF example
+c Author rkx1209
+p cnf 6 1
+1 6 5 4 3 9 1 2 0
