@@ -19,4 +19,5 @@ C3BsTreeIter *c3_bstree_add (C3BsTree *bstree, void *data, C3BsComparator cmp);
 C3BsTreeIter *c3_bstree_delete (C3BsTree *bstree, C3BsTreeIter *iter, C3BsComparator cmp);
 C3BsTreeIter *c3_bstree_sub_min (C3BsTreeIter *root, C3BsComparator cmp);
 C3BsTreeIter *c3_bstree_min (C3BsTree *bstree, C3BsComparator cmp);
+void c3_bstree_balance (C3BsTree *bstree);
 #endif

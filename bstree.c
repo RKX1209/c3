@@ -74,6 +74,9 @@ C3BsTreeIter *c3_bstree_add (C3BsTree *bstree, void *data, C3BsComparator cmp) {
   } else {
     parent->r = iter;
   }
+
+  /* Balancing */
+  c3_bstree_balance (bstree);
 }
 
 C3BsTreeIter *c3_bstree_sub_min (C3BsTreeIter *root, C3BsComparator cmp) {
@@ -131,4 +134,107 @@ static C3BsTreeIter *_c3_bstree_delete (C3BsTreeIter *iter,
 
 C3BsTreeIter *c3_bstree_delete (C3BsTree *bstree, C3BsTreeIter *target, C3BsComparator cmp) {
   return _c3_bstree_delete (bstree->root, target, cmp);
+}
+
+static int32_t _c3_bstree_depth (C3BsTreeIter *iter) {
+  int32_t depth_l = 0, depth_r = 0;
+  if (iter->l) {
+    depth_l = _c3_bstree_depth (iter->l);
+  }
+  if (iter->r) {
+    depth_r = _c3_bstree_depth (iter->r);
+  }
+  return depth_r > depth_l ? ++depth_r : ++depth_l;
+}
+
+static int32_t _c3_bstree_bfact (C3BsTreeIter *iter) {
+  int32_t res = 0;
+  if (iter->l) {
+    res += _c3_bstree_depth (iter->l);
+  }
+  if (iter->r) {
+    res -= _c3_bstree_depth (iter->r);
+  }
+  return res;
+}
+
+/* Left Right Rotate */
+static C3BsTreeIter *_c3_bstree_rotate_lr (C3BsTreeIter *iter) {
+  C3BsTreeIter *left = iter->l;
+  C3BsTreeIter *right = left->r;
+  iter->l = right->r;
+  left->r = right->l;
+  right->l = left;
+  right->r = iter;
+  return right;
+}
+
+/* Left Left Rotate */
+static C3BsTreeIter *_c3_bstree_rotate_ll (C3BsTreeIter *iter) {
+  C3BsTreeIter *left = iter->l;
+  iter->l = left->r;
+  left->r = iter;
+  return left;
+}
+
+/* Right Left Rotate */
+static C3BsTreeIter *_c3_bstree_rotate_rl (C3BsTreeIter *iter) {
+  C3BsTreeIter *right = iter->r;
+  C3BsTreeIter *left = right->l;
+  iter->r = right->l;
+  right->l = left->r;
+  left->l = iter;
+  left->r = right;
+  return left;
+}
+
+/* Left Left Rotate */
+static C3BsTreeIter *_c3_bstree_rotate_rr (C3BsTreeIter *iter) {
+  C3BsTreeIter *right = iter->r;
+  iter->r = right->l;
+  right->l = iter;
+  return right;
+}
+
+static C3BsTreeIter *_c3_avl_balance (C3BsTreeIter *iter) {
+  C3BsTreeIter *newroot = NULL;
+  if (iter->l) {
+    iter->l = _c3_avl_balance (iter->l);
+  }
+  if (iter->r) {
+    iter->r = _c3_avl_balance (iter->r);
+  }
+
+  int32_t bfact = _c3_bstree_bfact (iter);
+
+  if (bfact >= 2) {
+    /* left heavy*/
+    if (_c3_bstree_bfact (iter->l) <= -1) {
+      /* left right heavy case */
+      newroot = _c3_bstree_rotate_lr (iter);
+    } else {
+      /* left left heavy case */
+      newroot = _c3_bstree_rotate_ll (iter);
+    }
+  } else if (bfact <= -2) {
+    /* right heavy*/
+    if (_c3_bstree_bfact (iter->r) >= 1) {
+      /* right left heavy case */
+      newroot = _c3_bstree_rotate_rl (iter);
+    } else {
+      /* right right heavy case */
+      newroot = _c3_bstree_rotate_rr (iter);
+    }
+  } else {
+    newroot = iter;
+  }
+  return newroot;
+}
+
+void c3_bstree_balance (C3BsTree *bstree) {
+  C3BsTreeIter *newroot = NULL;
+  newroot = _c3_avl_balance (bstree->root);
+  if (newroot != bstree->root) {
+    bstree->root = newroot;
+  }
 }
