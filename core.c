@@ -7,6 +7,7 @@
 #include <string.h>
 #include <c3_list.h>
 #include <c3_hashmap.h>
+#include <c3_bstree.h>
 
 #define C3_INVALID -1   //error
 #define C3_UNSAT    0   //unatisfiable
@@ -20,6 +21,7 @@ typedef struct c3_t {
   int32_t disjnum;
   C3List *cnf; // <cnf[i] = i-th Disjunction>
   C3Hmap *literals;
+  C3BsTree *literals2;
 }C3;
 static C3 c3;
 
@@ -246,20 +248,34 @@ static bool _c3_dpll_simplify2(C3 *c3, int8_t *res) {
         return false;
       }
       *flag = true;
-      c3_hmap_add_int32 (c3->literals, *num, flag);
+      //c3_hmap_add_int32 (c3->literals, *num, flag);
+      c3_bstree_add (c3->literals2, num, c3_compare_value);
     }
   }
 
   /* Delete if literal is pure */
   for (i = 1; i <= c3->valnum; i++) {
-    if (!c3_hmap_get_int32 (c3->literals, i)) {
+    // if (!c3_hmap_get_int32 (c3->literals, i)) {
+    //   continue;
+    // }
+    // if (c3_hmap_get_int32 (c3->literals, -i)) {
+    //   /* not pure. */
+    //   continue;
+    // }
+    int32_t *pos, *neg;
+    pos = malloc (sizeof(int));
+    *pos = i;
+    neg = malloc (sizeof(int));
+    *neg = -i;
+    if (!c3_bstree_find (c3->literals2, pos, c3_compare_value)) {
       continue;
     }
-    if (c3_hmap_get_int32 (c3->literals, -i)) {
+    if (c3_bstree_find (c3->literals2, neg, c3_compare_value)) {
       /* not pure. */
       continue;
     }
-    //printf ("pure literal %d\n", i);
+
+    printf ("pure literal %d\n", i);
     iter = c3->cnf->head;
     while (iter) {
       disj = iter->data;
@@ -297,6 +313,7 @@ C3_STATUS c3_derive_sat(C3 *c3, int8_t *res) {
 void c3_init (C3 *c3) {
   c3->cnf = c3_list_new ();
   c3->literals = c3_hmap_new (50); //TODO: implment rehash function
+  c3->literals2 = c3_bstree_new ();
 }
 
 void c3_fini (C3 *c3) {
@@ -307,6 +324,7 @@ void c3_fini (C3 *c3) {
   }
   c3_list_free (c3->cnf);
   c3_hmap_free (c3->literals);
+  c3_bstree_free (c3->literals2);
 }
 
 char* c3_file_read (FILE *fp, long *len) {
