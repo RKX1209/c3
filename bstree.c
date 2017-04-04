@@ -48,6 +48,8 @@ C3BsTreeIter *c3_bstree_find (C3BsTree *bstree, void *data, C3BsComparator cmp) 
 C3BsTreeIter *c3_bstree_add (C3BsTree *bstree, void *data, C3BsComparator cmp) {
   if (!bstree->root) {
     bstree->root = calloc (1, sizeof(C3BsTreeIter));
+    bstree->root->data = data;
+    bstree->root->l = bstree->root->r = NULL;
     return bstree->root;
   }
   C3BsTreeIter *iter = bstree->root;
@@ -64,6 +66,8 @@ C3BsTreeIter *c3_bstree_add (C3BsTree *bstree, void *data, C3BsComparator cmp) {
     }
   }
   iter = calloc (1, sizeof(C3BsTreeIter));
+  iter->l = iter->r = NULL;
+  iter->pr = parent;
   iter->data = data;
   if (cmp (data, parent->data) < 0) {
     parent->l = iter;
