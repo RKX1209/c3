@@ -269,7 +269,7 @@ C3ListIter *_c3_split_part (C3List *list, C3ListIter *head, C3ListIter *tail, C3
       l = l->n;
       li++;
     }
-    while (r != head && cmp (r->data, pivot->data) >= 0) {
+    while (r != head && cmp (r->data, pivot->data) > 0) {
       r = r->p;
       ri--;
     }
