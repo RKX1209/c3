@@ -248,29 +248,17 @@ static bool _c3_dpll_simplify2(C3 *c3, int8_t *res) {
         return false;
       }
       *flag = true;
-      //c3_hmap_add_int32 (c3->literals, *num, flag);
-      c3_bstree_add (c3->literals2, num, c3_compare_value);
+      c3_hmap_add_int32 (c3->literals, *num, flag);
+      //c3_bstree_add (c3->literals2, num, c3_compare_value);
     }
   }
 
   /* Delete if literal is pure */
   for (i = 1; i <= c3->valnum; i++) {
-    // if (!c3_hmap_get_int32 (c3->literals, i)) {
-    //   continue;
-    // }
-    // if (c3_hmap_get_int32 (c3->literals, -i)) {
-    //   /* not pure. */
-    //   continue;
-    // }
-    int32_t *pos, *neg;
-    pos = malloc (sizeof(int));
-    *pos = i;
-    neg = malloc (sizeof(int));
-    *neg = -i;
-    if (!c3_bstree_find (c3->literals2, pos, c3_compare_value)) {
+    if (!c3_hmap_get_int32 (c3->literals, i)) {
       continue;
     }
-    if (c3_bstree_find (c3->literals2, neg, c3_compare_value)) {
+    if (c3_hmap_get_int32 (c3->literals, -i)) {
       /* not pure. */
       continue;
     }
