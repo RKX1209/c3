@@ -9,12 +9,12 @@
 #include <c3_hashmap.h>
 #include <c3_bstree.h>
 
-#define C3_INVALID -1   //error
-#define C3_UNSAT    0   //unatisfiable
-#define C3_SAT      1   //satisfiable
+#define C3_INVALID  0   //error
+#define C3_UNSAT    1   //unatisfiable
+#define C3_SAT      2   //satisfiable
 
 typedef uint8_t C3_STATUS;
-char *status_str[2] = {"UNSATISFIABLE", "SATISFIABLE"};
+char *status_str[] = {"ERROR", "UNSATISFIABLE", "SATISFIABLE"};
 
 typedef struct c3_t {
   int32_t valnum;
@@ -139,6 +139,7 @@ int c3_parse_cnffile (C3 *c3, char *data) {
           c3_list_append (disj, inump);
         }
         printf ("\n");
+        /* data may be pointing EOF or '\0' when input is not ended with '\n' */
         data++; //skip '\n'
       }
     } else {
@@ -181,7 +182,7 @@ fail:
 }
 
 /* one literal rule */
-static bool _c3_dpll_simplify1(C3 *c3, int8_t *res) {
+static bool _c3_dpll_simplify1(C3 *c3, int32_t *res) {
   bool simplify;
   bool updated = false;
   C3ListIter *iter, *iter2, *next, *next2;
@@ -233,7 +234,7 @@ static bool _c3_dpll_simplify1(C3 *c3, int8_t *res) {
 }
 
 /* pure literal rule */
-static bool _c3_dpll_simplify2(C3 *c3, int8_t *res) {
+static bool _c3_dpll_simplify2(C3 *c3, int32_t *res) {
   C3ListIter *iter, *iter2, *next;
   C3List *disj;
   int32_t *num, i;
@@ -264,6 +265,8 @@ static bool _c3_dpll_simplify2(C3 *c3, int8_t *res) {
     }
 
     printf ("pure literal %d\n", i);
+    res[i - 1] = (i < 0) ? -1 : 1;
+
     iter = c3->cnf->head;
     while (iter) {
       disj = iter->data;
@@ -281,17 +284,36 @@ static bool _c3_dpll_simplify2(C3 *c3, int8_t *res) {
 }
 
 /* Simplification rules */
-static void _c3_dpll_simplify(C3 *c3, int8_t *res) {
+static void _c3_dpll_simplify(C3 *c3, int32_t *res) {
   while (_c3_dpll_simplify1(c3, res) ||
         _c3_dpll_simplify2(c3, res) );
 }
 
-/* DPLL algorithm */
-static C3_STATUS _c3_derive_dpll(C3 *c3, int8_t *res) {
-  _c3_dpll_simplify (c3, res);
+/* Split rule */
+static C3_STATUS _c3_dpll_split (C3 *c3, int32_t *res) {
+
 }
 
-C3_STATUS c3_derive_sat(C3 *c3, int8_t *res) {
+/* DPLL algorithm */
+static C3_STATUS _c3_derive_dpll(C3 *c3, int32_t *res) {
+  C3ListIter *iter;
+  C3List *disj;
+  /* Simplify */
+  _c3_dpll_simplify (c3, res);
+
+  if (c3_list_empty (c3->literals)) {
+    return C3_SAT;
+  }
+  c3_list_foreach (c3->cnf, iter, disj) {
+    if (c3_list_empty (disj)) {
+      return C3_UNSAT;
+    }
+  }
+
+  //return _c3_dpll_split (c3, res);
+}
+
+C3_STATUS c3_derive_sat(C3 *c3, int32_t *res) {
   if (c3 && res) {
     return _c3_derive_dpll (c3, res);
   }
@@ -364,6 +386,7 @@ int main(int argc, char **argv, char **envp) {
   FILE* cnfp;
   char *cnf_path, *cnf;
   int8_t *res;
+  C3_STATUS status;
 
   if (argc < 2) {
     return help ();
@@ -400,12 +423,23 @@ int main(int argc, char **argv, char **envp) {
   c3_print_cnf (&c3);
   c3_sort_cnf (&c3);
   c3_print_cnf (&c3);
-  res = (int8_t*) calloc (c3.valnum, sizeof(int8_t));
-  c3_derive_sat (&c3, res);
+  res = (int8_t*) malloc (c3.valnum * sizeof(int8_t));
+  status = c3_derive_sat (&c3, res);
   c3_print_cnf (&c3);
+  printf ("s %s\n", status_str[status]);
+  if (status == C3_SAT) {
+    /* print result */
+    printf ("v ");
+    int i;
+    for (i = 0; i < c3.valnum; i++) {
+        if (res[i]) printf ("%d ", i + 1);
+        else printf ("%d ", -(i + 1));
+    }
+    printf ("0\n");
+  }
 
   /* Finish */
   fclose (cnfp);
-  //free (res);
+  free (res);
   //c3_fini (&c3);
 }
