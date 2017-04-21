@@ -254,7 +254,7 @@ static bool _c3_dpll_simplify2(C3 *c3, int8_t *res) {
   }
 
   /* Delete if literal is pure */
-  for (i = 1; i <= c3->valnum; i++) {
+  for (i = -c3->valnum; i <= c3->valnum; i++) {
     if (!c3_hmap_get_int32 (c3->literals, i)) {
       continue;
     }
@@ -300,7 +300,7 @@ C3_STATUS c3_derive_sat(C3 *c3, int8_t *res) {
 
 void c3_init (C3 *c3) {
   c3->cnf = c3_list_new ();
-  c3->literals = c3_hmap_new (50); //TODO: implment rehash function
+  c3->literals = c3_hmap_new (100); //TODO: implment rehash function
   c3->literals2 = c3_bstree_new ();
 }
 
@@ -321,7 +321,7 @@ char* c3_file_read (FILE *fp, long *len) {
   if (fp) {
     fseek (fp, 0, SEEK_END);
     sz = ftell (fp);
-    buf = (char *) calloc (sz, sizeof(char));
+    buf = (char *) calloc (sz + 1, sizeof(char));
     if (!buf) {
       return NULL;
     }
