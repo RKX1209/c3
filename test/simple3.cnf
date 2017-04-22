@@ -1,8 +1,9 @@
 c This is example of satisifiable form
 c see. https://en.wikipedia.org/wiki/DPLL_algorithm
 c Author rkx1209
-p cnf 6 4
+p cnf 6 5
 4 5 0
 -4 -5 0
 1 6 0
 -1 6 0
+-2 -3 0

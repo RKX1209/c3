@@ -30,6 +30,11 @@ static int help() {
   return 0;
 }
 
+static int version() {
+  printf ("c3 1.0.0 \n");
+  return 0;
+}
+
 static int c3_compare_symbol (const int32_t *a, const int32_t *b) {
   int32_t ai, bi;
   ai = (*a < 0) ? -(*a) : *a;
@@ -473,10 +478,13 @@ int main(int argc, char **argv, char **envp) {
   if (argc < 2) {
     return help ();
   }
-  while ((c = getopt (argc, argv, "h")) != -1) {
+  while ((c = getopt (argc, argv, "hv")) != -1) {
     switch (c) {
       case 'h':
         help ();
+        break;
+      case 'v':
+        version ();
         break;
       default:
         break;
