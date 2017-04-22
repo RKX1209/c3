@@ -69,7 +69,7 @@ void c3_listiter_delete(C3List *list, C3ListIter *iter) {
     if (iter->n) {
       iter->n->p = iter->p;
     }
-    c3_listiter_free (iter);
+    //c3_listiter_free (iter);
     list->length--;
   }
 }
@@ -90,7 +90,7 @@ void c3_listiter_free(C3ListIter *iter) {
       free (iter->data);
     }
     /* XXX: this free cause 'free(): invalid next size (fast) error' */
-    //free (iter);
+    free (iter);
   }
 }
 

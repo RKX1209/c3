@@ -71,11 +71,14 @@ void _c3_print_cnf (C3List *cnf) {
   int32_t *num;
   c3_list_foreach (cnf, iter, disj) {
     printf ("(");
+    //printf ("[%p] ", iter);
     c3_list_foreach (disj, iter2, num) {
       if (*num < 0) {
         printf ("!x%d", -(*num));
+        //printf ("!x%d(%p)", -(*num), num);
       } else {
         printf ("x%d", *num);
+        //printf ("x%d(%p)", *num, num);
       }
       if (iter2 != disj->tail) { //XXX
         printf (" or ");
@@ -305,9 +308,9 @@ static bool _c3_dpll_simplify2(C3 *c3, C3List *cnf, int32_t *res) {
       continue;
     }
     absi = abs(i);
-    printf ("pure literal %d\n", i);
     res[absi - 1] = (i < 0) ? -1 : 1;
     iter = cnf->head;
+    //printf ("pure literal %d\t%p\n", i, iter);
     while (iter) {
       disj = iter->data;
       next = iter->n;
@@ -318,6 +321,7 @@ static bool _c3_dpll_simplify2(C3 *c3, C3List *cnf, int32_t *res) {
       iter = next;
     }
     updated = true;
+    _c3_print_cnf (cnf);
   }
   c3_hmap_clear (c3->literals);
   return updated;
@@ -512,7 +516,7 @@ int main(int argc, char **argv, char **envp) {
   }
   c3_print_cnf (&c3);
   c3_sort_cnf (&c3);
-  res = (int8_t*) calloc (c3.valnum, sizeof(int8_t));
+  res = (int8_t*) calloc (c3.valnum, sizeof(int32_t));
   status = c3_derive_sat (&c3, res);
   //c3_print_cnf (&c3);
   printf ("s %s\n", status_str[status]);
