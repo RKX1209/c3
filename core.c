@@ -136,7 +136,7 @@ static inline bool c3_is_digit (char c) {
 }
 
 static int32_t get_digit_long (char **p) {
-  int32_t res = 0, dig = 1;
+  int32_t res = 0;
   int sign = 1;
   if (**p == '-') {
     sign = -1;
@@ -144,8 +144,8 @@ static int32_t get_digit_long (char **p) {
   }
   //XXX may overflow. and must treat invalid num, like 8p30
   while (c3_is_digit (**p)) {
-    res += (**p - '0') * dig;
-    dig *= 10;
+    res *= 10;
+    res += (**p - '0');
     (*p)++;
   }
   res *= sign;
