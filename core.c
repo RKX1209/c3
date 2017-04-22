@@ -101,6 +101,19 @@ C3List* c3_dup_cnf (C3List *cnf) {
   return res;
 }
 
+void c3_del_cnf (C3List *cnf) {
+  C3ListIter *iter;
+  C3List *disj, *next;
+  iter = cnf->head;
+  while (iter) {
+    disj = (C3List*)iter->data;
+    next = iter->n;
+    c3_list_free (disj);
+    iter = next;
+  }
+  free (cnf);
+}
+
 static void skip_until_line (char **p) {
   while (**p != '\n' && **p != '\0') {
     ++(*p);
@@ -367,7 +380,10 @@ static C3_STATUS _c3_derive_dpll(C3 *c3, C3List *cnf, int32_t *res) {
 
 C3_STATUS c3_derive_sat(C3 *c3, int32_t *res) {
   if (c3 && res) {
-    return _c3_derive_dpll (c3, c3->cnf, res);
+    C3List *cnf2 = c3_dup_cnf (c3->cnf);
+    C3_STATUS status = _c3_derive_dpll (c3, cnf2, res);
+    c3_del_cnf (cnf2);
+    return status;
   }
   return C3_INVALID;
 }
@@ -379,12 +395,7 @@ void c3_init (C3 *c3) {
 }
 
 void c3_fini (C3 *c3) {
-  C3ListIter *iter;
-  C3List *disj;
-  c3_list_foreach (c3->cnf, iter, disj) {
-    c3_list_free (disj);
-  }
-  c3_list_free (c3->cnf);
+  c3_del_cnf (c3->cnf);
   c3_hmap_free (c3->literals);
   c3_bstree_free (c3->literals2);
 }
@@ -492,5 +503,5 @@ int main(int argc, char **argv, char **envp) {
   /* Finish */
   fclose (cnfp);
   free (res);
-  //c3_fini (&c3);
+  c3_fini (&c3);
 }
