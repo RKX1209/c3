@@ -1,5 +1,6 @@
 /* C3 Theorem Prover - Apache v2.0 - Copyright 2017 - rkx1209 */
 #include <unistd.h>
+#include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -8,6 +9,8 @@
 #include <c3_list.h>
 #include <c3_hashmap.h>
 #include <c3_bstree.h>
+
+#define DEBUG_LEVEL 0
 
 #define C3_UNSAT    0   //unatisfiable
 #define C3_SAT      1   //satisfiable
@@ -24,6 +27,15 @@ typedef struct c3_t {
   C3BsTree *literals2;
 }C3;
 static C3 c3;
+
+static inline debug_log (int level, const char *format, ...) {
+  va_list ap;
+  va_start (ap, format);
+  if (level <= DEBUG_LEVEL) {
+    vprintf (format, ap);
+  }
+  va_end (ap);
+}
 
 static int help() {
   printf ("Usage: c3 <cnf-file>\n");
@@ -71,14 +83,14 @@ void _c3_print_cnf (C3List *cnf) {
   int32_t *num;
   c3_list_foreach (cnf, iter, disj) {
     printf ("(");
-    //printf ("[%p] ", iter);
+    debug_log (1, "[%p] ", iter);
     c3_list_foreach (disj, iter2, num) {
       if (*num < 0) {
         printf ("!x%d", -(*num));
-        //printf ("!x%d(%p)", -(*num), num);
+        debug_log (1, "(%p)", num);
       } else {
         printf ("x%d", *num);
-        //printf ("x%d(%p)", *num, num);
+        debug_log (1, "(%p)", num);
       }
       if (iter2 != disj->tail) { //XXX
         printf (" or ");
@@ -164,7 +176,7 @@ int c3_parse_cnffile (C3 *c3, char *data) {
 
   while (*data) {
     if (valid) {
-      printf ("size=%d, val=%d\n", c3->disjnum, c3->valnum);
+      debug_log (1, "size=%d, val=%d\n", c3->disjnum, c3->valnum);
       for (i = 0; i < c3->disjnum; i++) {
         disj = c3_list_new ();
         c3_list_append (c3->cnf, disj);
@@ -177,23 +189,23 @@ int c3_parse_cnffile (C3 *c3, char *data) {
           }
           inump = malloc (sizeof(int));
           *inump = inum;
-          printf ("%d ", inum);
+          debug_log (1, "%d ", inum);
           c3_list_append (disj, inump);
         }
-        printf ("\n");
+        debug_log (1, "\n");
         /* data may be pointing EOF or '\0' when input is not ended with '\n' */
         data++; //skip '\n'
       }
     } else {
       switch (data[0]) {
         case 'c':
-          printf("c: comment\n");
+          debug_log (1, "c: comment\n");
           data++; //skip 'c'
           skip_until_line (&data);
           data++; //skip '\n'
           break;
         case 'p':
-          printf("p: header\n");
+          debug_log (1, "p: header\n");
           if (!(++data) || strncmp (++data, "cnf", 3) != 0) {
             goto fail;
           }
@@ -211,7 +223,7 @@ int c3_parse_cnffile (C3 *c3, char *data) {
           valid = true;
           break;
         default:
-          printf ("cannnot read '%c'\n", data[0]);
+          fprintf (stderr, "cannnot read '%c'\n", data[0]);
           goto fail;
       }
     }
@@ -233,7 +245,7 @@ static void _c3_dpll_remove2 (C3 *c3, C3List *cnf, int32_t l) {
     C3ListIter *fnd;
     if (fnd = c3_list_find (disj, (void*)&l, c3_compare_symbol)) {
       int32_t* found = c3_list_get_data (fnd);
-      //printf ("found: %d\n",*found);
+      debug_log (2, "found: %d\n",*found);
       if (l < 0 && *found < 0 || l > 0 && *found > 0) {
         /* same literal (same sign) */
         /* Delete all elements of list */
@@ -265,7 +277,7 @@ static bool _c3_dpll_simplify1(C3 *c3, C3List *cnf, int32_t *res) {
         int32_t* onep = c3_list_head_data (disj);
         int32_t one = *onep;
         int32_t oneab = abs(one);
-        printf ("found one literal %d(%p)\n", one, onep);
+        debug_log (1, "found one literal %d(%p)\n", one, onep);
         res[oneab - 1] = (one < 0) ? -1 : 1;
         simplify = true;
         _c3_dpll_remove2 (c3, cnf, one);
@@ -310,7 +322,7 @@ static bool _c3_dpll_simplify2(C3 *c3, C3List *cnf, int32_t *res) {
     absi = abs(i);
     res[absi - 1] = (i < 0) ? -1 : 1;
     iter = cnf->head;
-    //printf ("pure literal %d\t%p\n", i, iter);
+    debug_log (1, "pure literal %d\t%p\n", i, iter);
     while (iter) {
       disj = iter->data;
       next = iter->n;
@@ -321,7 +333,7 @@ static bool _c3_dpll_simplify2(C3 *c3, C3List *cnf, int32_t *res) {
       iter = next;
     }
     updated = true;
-    _c3_print_cnf (cnf);
+    //_c3_print_cnf (cnf);
   }
   c3_hmap_clear (c3->literals);
   return updated;
@@ -343,7 +355,7 @@ static C3_STATUS _c3_dpll_split (C3 *c3, C3List *cnf, int32_t *res) {
   hdisj = c3_list_head_data (cnf);
   l = abs(*(int32_t*)c3_list_head_data (hdisj));
   /* Assume that l = true */
-  printf ("assume %d\n", l);
+  debug_log (1, "assume %d\n", l);
   tlist = c3_dup_cnf (cnf);
   _c3_dpll_remove2 (c3, tlist, l);
   _c3_print_cnf (tlist);
@@ -354,7 +366,7 @@ static C3_STATUS _c3_dpll_split (C3 *c3, C3List *cnf, int32_t *res) {
   }
 
   /* Assume that l = false */
-  printf ("assume %d\n", -l);
+  debug_log (1, "assume %d\n", -l);
   flist = c3_dup_cnf (cnf);
   _c3_dpll_remove2 (c3, flist, -l);
   _c3_print_cnf (flist);
@@ -458,16 +470,15 @@ bool c3_verify_sat (C3 *c3, int32_t *res) {
   C3List *disj;
   int32_t *num;
   bool ans = true;
-  c3_print_cnf (c3);
   c3_list_foreach (c3->cnf, iter, disj) {
     bool disjr = false;
     c3_list_foreach (disj, iter2, num) {
-      //printf ("%d(%d) ", abs (*num), res[abs(*num) - 1]);
+      debug_log (2, "%d(%d) ", abs (*num), res[abs(*num) - 1]);
       if (res[abs(*num) - 1] * (*num) >= 0) disjr |= true;
     }
     ans &= disjr;
   }
-  //printf("\n");
+  debug_log (2, "\n");
   return ans;
 }
 
