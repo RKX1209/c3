@@ -12,12 +12,16 @@ bool c3_list_empty(C3List *list) {
   return list ? list->length == 0 : false;
 }
 
-C3List *c3_list_sub(C3List *list, C3ListIter *start, C3ListIter *end) {
+C3List *c3_list_sub(C3List *list, C3ListIter *start, C3ListIter *end, C3ListDataDup dup) {
   C3List *clone;
   C3ListIter *iter = start;
   void *data;
   clone = c3_list_new ();
   while (iter) {
+    if (dup) {
+      /* copy to new entry */
+      iter->data = dup (iter->data);
+    }
     c3_list_append (clone, iter->data);
     iter = iter->n;
     if (iter == end) break;
@@ -25,8 +29,8 @@ C3List *c3_list_sub(C3List *list, C3ListIter *start, C3ListIter *end) {
   return clone;
 }
 
-C3List *c3_list_clone(C3List *list) {
-  return c3_list_sub (list, list->head, list->tail);
+C3List *c3_list_clone(C3List *list, C3ListDataDup dup) {
+  return c3_list_sub (list, list->head, NULL, dup);
 }
 
 void *c3_list_head_data (C3List *list) {
@@ -84,7 +88,8 @@ void c3_listiter_free(C3ListIter *iter) {
     if (iter->data) {
       free (iter->data);
     }
-    free (iter);
+    /* XXX: this free cause 'free(): invalid next size (fast) error' */
+    //free (iter);
   }
 }
 
@@ -119,7 +124,7 @@ C3List* c3_list_new() {
 C3ListIter *c3_list_append(C3List *list, void *data) {
   C3ListIter *iter;
   if (list && data) {
-    iter = (C3ListIter*)calloc (1, sizeof(C3ListIter));
+    iter = (C3ListIter*) malloc (sizeof(C3ListIter));
     if (list->tail) {
       list->tail->n = iter;
     }
