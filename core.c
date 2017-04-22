@@ -437,11 +437,29 @@ FILE* c3_file_open (const char *file, const char *mode) {
 void c3_sort_cnf (C3 *c3) {
   C3ListIter *iter;
   C3List *disj;
-  int32_t *num;
   c3_list_foreach (c3->cnf, iter, disj) {
     //c3_list_merge_sort (disj, c3_compare_value);
     c3_list_quick_sort (disj, c3_compare_value);
   }
+}
+
+/* Verify the result of SAT */
+bool c3_verify_sat (C3 *c3, int32_t *res) {
+  C3ListIter *iter, *iter2;
+  C3List *disj;
+  int32_t *num;
+  bool ans = true;
+  c3_print_cnf (c3);
+  c3_list_foreach (c3->cnf, iter, disj) {
+    bool disjr = false;
+    c3_list_foreach (disj, iter2, num) {
+      //printf ("%d(%d) ", abs (*num), res[abs(*num) - 1]);
+      if (res[abs(*num) - 1] * (*num) >= 0) disjr |= true;
+    }
+    ans &= disjr;
+  }
+  //printf("\n");
+  return ans;
 }
 
 int main(int argc, char **argv, char **envp) {
@@ -450,6 +468,7 @@ int main(int argc, char **argv, char **envp) {
   char *cnf_path, *cnf;
   int32_t *res;
   C3_STATUS status;
+  bool correct;
 
   if (argc < 2) {
     return help ();
@@ -498,8 +517,9 @@ int main(int argc, char **argv, char **envp) {
         else printf ("%d ", -(i + 1));
     }
     printf ("0\n");
+    correct = c3_verify_sat (&c3, res);
+    printf ("Verifying.... [%s]\n", (correct ? "SUCCESS":"FAIL"));
   }
-
   /* Finish */
   fclose (cnfp);
   free (res);

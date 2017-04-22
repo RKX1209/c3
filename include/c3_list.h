@@ -17,6 +17,7 @@ typedef struct c3_list {
 }C3List;
 
 typedef int (*C3ListComparator)(const void *a, const void *b);
+typedef void* (*C3ListDataDup)(const void *a);
 
 #define c3_list_foreach(list, it, val) \
   if (list) \
@@ -32,7 +33,7 @@ C3List *c3_list_new(void);
 C3ListIter *c3_list_append(C3List *list, void *data);
 void c3_list_clear(C3List *list);
 void c3_list_free(C3List *list);
-C3List *c3_list_clone(C3List *list);
+C3List *c3_list_clone(C3List *list, C3ListDataDup dup);
 size_t c3_list_length(C3List *list);
 bool c3_list_empty(C3List *list);
 C3ListIter *c3_list_find(C3List *list, const void *data, C3ListComparator cmp);

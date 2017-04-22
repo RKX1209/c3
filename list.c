@@ -18,11 +18,12 @@ C3List *c3_list_sub(C3List *list, C3ListIter *start, C3ListIter *end, C3ListData
   void *data;
   clone = c3_list_new ();
   while (iter) {
+    data = iter->data;
     if (dup) {
       /* copy to new entry */
-      iter->data = dup (iter->data);
+      data = dup (iter->data);
     }
-    c3_list_append (clone, iter->data);
+    c3_list_append (clone, data);
     iter = iter->n;
     if (iter == end) break;
   }
