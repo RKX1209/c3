@@ -181,50 +181,52 @@ fail:
   return 0;
 }
 
+/* Delete '-l' entries and entire lists that contain 'l' */
+static void _c3_dpll_remove2 (C3 *c3, C3List *cnf, int32_t l) {
+  C3ListIter *iter, *next;
+  C3List *disj;
+  iter = cnf->head;
+  while (iter && (disj = iter->data)) {
+    next = iter->n;
+    C3ListIter *fnd;
+    if (fnd = c3_list_find (disj, (void*)&l, c3_compare_symbol)) {
+      int32_t* found = c3_list_get_data (fnd);
+      //printf ("found: %d\n",*found);
+      if (l < 0 && *found < 0 || l > 0 && *found > 0) {
+        /* same literal (same sign) */
+        /* Delete all elements of list */
+        c3_list_clear (disj);
+        c3_listiter_delete (cnf, iter);
+      } else {
+        /* different sign */
+        /* Delete only one literal */
+        c3_listiter_delete (disj, fnd);
+      }
+    }
+    iter = next;
+  }
+}
+
 /* one literal rule */
-static bool _c3_dpll_simplify1(C3 *c3, int32_t *res) {
+static bool _c3_dpll_simplify1(C3 *c3, C3List *cnf, int32_t *res) {
   bool simplify;
   bool updated = false;
-  C3ListIter *iter, *iter2, *next, *next2;
-  C3List *disj, *disj2;
+  C3ListIter *iter, *next;
+  C3List *disj;
   do {
     simplify = false;
-    iter = c3->cnf->head;
+    iter = cnf->head;
     while (iter && (disj = iter->data)) {
       next = iter->n;
       if (c3_list_length (disj) == 1) {
         /* Found alone literal */
         int32_t* onep = c3_list_head_data (disj);
-        int32_t oneab = abs(*onep);
-        //printf ("found one literal %d\n", *onep);
-        res[oneab - 1] = (*onep < 0) ? -1 : 1;
+        int32_t one = *onep;
+        int32_t oneab = abs(one);
+        //printf ("found one literal %d\n", one);
+        res[oneab - 1] = (one < 0) ? -1 : 1;
         simplify = true;
-        iter2 = c3->cnf->head;
-        while (iter2 && (disj2 = iter2->data)) {
-          next2 = iter2->n;
-          if (disj == disj2) {  // must not iterate same disjunction
-            iter2 = next2;
-            continue;
-          }
-          C3ListIter *fnd;
-          if (fnd = c3_list_find (disj2, (void*)onep, c3_compare_symbol)) {
-            int32_t* found = c3_list_get_data (fnd);
-            //printf ("found: %d\n",*found);
-            if (*onep < 0 && *found < 0 || *onep > 0 && *found > 0) {
-              /* same literal (same sign) */
-              /* Delete all elements of list */
-              c3_list_clear (disj2);
-              c3_listiter_delete (c3->cnf, iter2);
-            } else {
-              /* different sign */
-              /* Delete only one literal */
-              c3_listiter_delete (disj2, fnd);
-            }
-          }
-          iter2 = next2;
-        }
-        c3_list_clear (disj);
-        c3_listiter_delete (c3->cnf, iter);
+        _c3_dpll_remove2 (c3, c3->cnf, one);
         updated = true;
       }
       iter = next;
@@ -234,7 +236,7 @@ static bool _c3_dpll_simplify1(C3 *c3, int32_t *res) {
 }
 
 /* pure literal rule */
-static bool _c3_dpll_simplify2(C3 *c3, int32_t *res) {
+static bool _c3_dpll_simplify2(C3 *c3, C3List *cnf, int32_t *res) {
   C3ListIter *iter, *iter2, *next;
   C3List *disj;
   int32_t *num, i;
@@ -242,7 +244,7 @@ static bool _c3_dpll_simplify2(C3 *c3, int32_t *res) {
   bool updated = false;
 
   /* Memorize all symbols */
-  c3_list_foreach (c3->cnf, iter, disj) {
+  c3_list_foreach (cnf, iter, disj) {
     c3_list_foreach (disj, iter2, num) {
       flag = malloc (sizeof(bool));
       if (!flag) {
@@ -267,13 +269,13 @@ static bool _c3_dpll_simplify2(C3 *c3, int32_t *res) {
     printf ("pure literal %d\n", i);
     res[i - 1] = (i < 0) ? -1 : 1;
 
-    iter = c3->cnf->head;
+    iter = cnf->head;
     while (iter) {
       disj = iter->data;
       next = iter->n;
       if (c3_list_find (disj, &i, c3_compare_value)) {
         c3_list_clear (disj);
-        c3_listiter_delete (c3->cnf, iter);
+        c3_listiter_delete (cnf, iter);
       }
       iter = next;
     }
@@ -284,38 +286,44 @@ static bool _c3_dpll_simplify2(C3 *c3, int32_t *res) {
 }
 
 /* Simplification rules */
-static void _c3_dpll_simplify(C3 *c3, int32_t *res) {
-  while (_c3_dpll_simplify1(c3, res) ||
-        _c3_dpll_simplify2(c3, res) );
+static void _c3_dpll_simplify(C3 *c3, C3List *cnf, int32_t *res) {
+  while (_c3_dpll_simplify1(c3, cnf, res) ||
+        _c3_dpll_simplify2(c3, cnf, res) );
 }
 
-/* Split rule */
-static C3_STATUS _c3_dpll_split (C3 *c3, int32_t *res) {
+static C3_STATUS _c3_derive_dpll(C3 *c3, C3List *cnf, int32_t *res);
 
+/* Split rule */
+static C3_STATUS _c3_dpll_split (C3 *c3, C3List *cnf, int32_t *res) {
+  C3List *tlist, *flist;
+  tlist = c3_list_clone (cnf);
+  flist = c3_list_clone (cnf);
+
+  c3_list_free (tlist);
+  c3_list_free (flist);
 }
 
 /* DPLL algorithm */
-static C3_STATUS _c3_derive_dpll(C3 *c3, int32_t *res) {
+static C3_STATUS _c3_derive_dpll(C3 *c3, C3List *cnf, int32_t *res) {
   C3ListIter *iter;
   C3List *disj;
   /* Simplify */
-  _c3_dpll_simplify (c3, res);
-
-  if (c3_list_empty (c3->literals)) {
+  _c3_dpll_simplify (c3, cnf, res);
+  if (c3_list_empty (cnf)) {
     return C3_SAT;
   }
-  c3_list_foreach (c3->cnf, iter, disj) {
+  c3_list_foreach (cnf, iter, disj) {
     if (c3_list_empty (disj)) {
       return C3_UNSAT;
     }
   }
 
-  //return _c3_dpll_split (c3, res);
+  //return _c3_dpll_split (c3, cnf, res);
 }
 
 C3_STATUS c3_derive_sat(C3 *c3, int32_t *res) {
   if (c3 && res) {
-    return _c3_derive_dpll (c3, res);
+    return _c3_derive_dpll (c3, c3->cnf, res);
   }
   return C3_INVALID;
 }
@@ -422,7 +430,7 @@ int main(int argc, char **argv, char **envp) {
   }
   c3_print_cnf (&c3);
   c3_sort_cnf (&c3);
-  c3_print_cnf (&c3);
+  //c3_print_cnf (&c3);
   res = (int8_t*) malloc (c3.valnum * sizeof(int8_t));
   status = c3_derive_sat (&c3, res);
   c3_print_cnf (&c3);
