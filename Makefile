@@ -9,13 +9,15 @@ INCLUDE =		include
 DEBUG		=		y
 CFLAGS	=		-I$(INCLUDE)
 CFLAGS-y= 	-g $(CFLAGS)
+SHELL :=		/bin/bash
+
 .PHONY: all install test clean
 all: $(OBJS)
 	$(CC) -o $(C3) $(OBJS)
 install:
 	$(CP) $(C3) /usr/bin/
 test:
-	./test/run_tests.sh
+	./run_tests.sh
 clean:
 	rm -rf *.o $(C3)
 .c.o :
