@@ -1,8 +1,8 @@
-#!/bin/sh
+#!/bin/bash
 # C3 test script
 # Apache v2.0 - Copyright 2017 - rkx1209
 
-c3 -v
+c3 -v > /dev/null
 if [ $? != 0 ]; then
   echo "Cannnot find c3"
   exit 1

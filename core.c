@@ -10,7 +10,7 @@
 #include <c3_hashmap.h>
 #include <c3_bstree.h>
 
-#define DEBUG_LEVEL -2
+#define DEBUG_LEVEL -1
 
 #define C3_UNSAT    0   //unatisfiable
 #define C3_SAT      1   //satisfiable
@@ -32,7 +32,7 @@ static inline debug_log (int level, const char *format, ...) {
   va_list ap;
   va_start (ap, format);
   if (level <= DEBUG_LEVEL) {
-    vprintf (format, ap);
+    vfprintf (stderr, format, ap);
   }
   va_end (ap);
 }
@@ -438,7 +438,7 @@ char* c3_file_read (FILE *fp, long *len) {
     }
     return buf;
   }
-  fprintf (stderr, "file_read: can not read file\n");
+  fprintf (stderr, "file_read: cannot read file\n");
   return NULL;
 }
 
@@ -448,7 +448,7 @@ FILE* c3_file_open (const char *file, const char *mode) {
     return NULL;
   }
   if ((fp = fopen (file, mode)) == NULL) {
-    fprintf (stderr, "file_open: can not open sucn file\n");
+    fprintf (stderr, "file_open: cannot open sucn file %s\n", file);
     return NULL;
   }
   return fp;

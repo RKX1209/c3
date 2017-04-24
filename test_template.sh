@@ -37,7 +37,8 @@ run_test() {
     echo "Cannnot create test directory"
     exit 1
   fi
-  TMP_NAM="${TMP_DIR}/out" # test name
+  TMP_NAM="${TMP_DIR}/nam" # test name
+  TMP_ERR="${TMP_DIR}/err" # stderr
   TMP_OUT="${TMP_DIR}/out" # stdout
   TMP_EXP="${TMP_DIR}/exp" # expected
   TMP_ODF="${TMP_DIR}/odf" # output diff
@@ -47,7 +48,7 @@ run_test() {
   $TEST_NAME / $NAME
 __EOF__
   printf "%s\n" "${EXPECT}" > ${TMP_EXP}
-  C3ARGS="${FILE} > ${TMP_OUT}"
+  C3ARGS="${FILE} > ${TMP_OUT} 2> ${TMP_ERR}"
   C3CMD="${C3} ${C3ARGS}"
   echo "test: ${C3CMD}"
   eval "${C3CMD}"
@@ -60,7 +61,7 @@ __EOF__
   if [ ${CODE} -ne 0 ]; then
     test_failed "c3 crashed"
   elif [ ${OUT_CODE} -ne 0 ]; then
-    test_failed
+    test_failed "unexpected ${TMP_ERR}"
   else
     test_success
   fi
