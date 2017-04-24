@@ -10,7 +10,7 @@
 #include <c3_hashmap.h>
 #include <c3_bstree.h>
 
-#define DEBUG_LEVEL 0
+#define DEBUG_LEVEL -2
 
 #define C3_UNSAT    0   //unatisfiable
 #define C3_SAT      1   //satisfiable
@@ -82,25 +82,25 @@ void _c3_print_cnf (C3List *cnf) {
   C3List *disj;
   int32_t *num;
   c3_list_foreach (cnf, iter, disj) {
-    printf ("(");
+    debug_log (-1, "(");
     debug_log (1, "[%p] ", iter);
     c3_list_foreach (disj, iter2, num) {
       if (*num < 0) {
-        printf ("!x%d", -(*num));
+        debug_log (-1, "!x%d", -(*num));
         debug_log (1, "(%p)", num);
       } else {
-        printf ("x%d", *num);
+        debug_log (-1, "x%d", *num);
         debug_log (1, "(%p)", num);
       }
       if (iter2 != disj->tail) { //XXX
-        printf (" or ");
+        debug_log (-1, " or ");
       }
     }
-    printf (")");
+    debug_log (-1, ")");
     if (iter == cnf->tail) {
-      printf ("\n");
+      debug_log (-1, "\n");
     } else {
-      printf (" and ");
+      debug_log (-1, " and ");
     }
   }
 }
@@ -488,7 +488,7 @@ int main(int argc, char **argv, char **envp) {
   char *cnf_path, *cnf;
   int32_t *res;
   C3_STATUS status;
-  bool correct;
+  bool correct = true;
 
   if (argc < 2) {
     return help ();
@@ -530,19 +530,19 @@ int main(int argc, char **argv, char **envp) {
   res = (int8_t*) calloc (c3.valnum, sizeof(int32_t));
   status = c3_derive_sat (&c3, res);
   //c3_print_cnf (&c3);
-  printf ("s %s\n", status_str[status]);
+  debug_log (-1, "s %s\n", status_str[status]);
   if (status == C3_SAT) {
     /* print result */
-    printf ("v ");
+    debug_log (-1, "v ");
     int i;
     for (i = 0; i < c3.valnum; i++) {
-        if (res[i] >= 0) printf ("%d ", i + 1);
-        else printf ("%d ", -(i + 1));
+        if (res[i] >= 0) debug_log (-1, "%d ", i + 1);
+        else debug_log (-1, "%d ", -(i + 1));
     }
-    printf ("0\n");
+    debug_log (-1, "0\n");
     correct = c3_verify_sat (&c3, res);
-    printf ("Verifying.... [%s]\n", (correct ? "SUCCESS":"FAIL"));
   }
+  printf ("Verifying.... [%s]\n", (correct ? "SUCCESS":"FAIL"));
   /* Finish */
   fclose (cnfp);
   free (res);
