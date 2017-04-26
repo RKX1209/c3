@@ -33,7 +33,7 @@ p cnf ${VALNUM} ${CNFNUM}
 cnf_rnd() {
   NAME='random cnf'
   FILE=/tmp/random.cnf
-  TESTNUM=100
+  TESTNUM=200
   for i in `seq 1 $TESTNUM`; do
     printf 'Test: %d\n' $i
     gen_cnf $i $((${i} * 2)) $FILE
