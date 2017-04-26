@@ -11,6 +11,7 @@ fi
 TESTS_TOTAL=0
 TESTS_SUCCESS=0
 TESTS_FAILED=0
+FAIL_OVER=0
 
 . ./test_template.sh
 

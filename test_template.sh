@@ -76,6 +76,9 @@ test_success() {
 test_failed() {
   print_failed "${*}"
   TESTS_FAILED=$(( TESTS_FAILED + 1 ))
+  if [ ${FAIL_OVER} -eq 1 ]; then
+    exit 1
+  fi
 }
 
 print_report() {
