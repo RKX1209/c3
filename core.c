@@ -15,6 +15,8 @@
 #define C3_UNSAT    0   //unatisfiable
 #define C3_SAT      1   //satisfiable
 #define C3_INVALID  2   //error
+#define C3_SIMPLIFY 3   //can still simplify
+#define C3_NONE     4   //none
 
 typedef uint8_t C3_STATUS;
 char *status_str[] = {"UNSATISFIABLE", "SATISFIABLE", "ERROR" };
@@ -262,9 +264,9 @@ static void _c3_dpll_remove2 (C3 *c3, C3List *cnf, int32_t l) {
 }
 
 /* one literal rule */
-static bool _c3_dpll_simplify1(C3 *c3, C3List *cnf, int32_t *res) {
+static C3_STATUS _c3_dpll_simplify1(C3 *c3, C3List *cnf, int32_t *res) {
   bool simplify;
-  bool updated = false;
+  C3_STATUS status = C3_NONE;
   C3ListIter *iter, *next;
   C3List *disj;
   do {
@@ -278,15 +280,19 @@ static bool _c3_dpll_simplify1(C3 *c3, C3List *cnf, int32_t *res) {
         int32_t one = *onep;
         int32_t oneab = abs(one);
         debug_log (1, "found one literal %d(%p)\n", one, onep);
+        if (res[oneab - 1]) {
+          /* literal is already set. inconsistent */
+          return C3_UNSAT;
+        }
         res[oneab - 1] = (one < 0) ? -1 : 1;
         simplify = true;
         _c3_dpll_remove2 (c3, cnf, one);
-        updated = true;
+        status = C3_SIMPLIFY;
       }
       iter = next;
     }
   } while (simplify);
-  return updated;
+  return status;
 }
 
 /* pure literal rule */
@@ -295,7 +301,7 @@ static bool _c3_dpll_simplify2(C3 *c3, C3List *cnf, int32_t *res) {
   C3List *disj;
   int32_t *num, i, absi;
   bool *flag;
-  bool updated = false;
+  C3_STATUS status = C3_NONE;
 
   /* Memorize all symbols */
   c3_list_foreach (cnf, iter, disj) {
@@ -320,6 +326,10 @@ static bool _c3_dpll_simplify2(C3 *c3, C3List *cnf, int32_t *res) {
       continue;
     }
     absi = abs(i);
+    if (res[absi - 1]) {
+      /* literal is already set. inconsistent */
+      return C3_UNSAT;
+    }
     res[absi - 1] = (i < 0) ? -1 : 1;
     iter = cnf->head;
     debug_log (1, "pure literal %d\t%p\n", i, iter);
@@ -332,17 +342,23 @@ static bool _c3_dpll_simplify2(C3 *c3, C3List *cnf, int32_t *res) {
       }
       iter = next;
     }
-    updated = true;
+    status = C3_SIMPLIFY;
     //_c3_print_cnf (cnf);
   }
   c3_hmap_clear (c3->literals);
-  return updated;
+  return status;
 }
 
 /* Simplification rules */
-static void _c3_dpll_simplify(C3 *c3, C3List *cnf, int32_t *res) {
-  while (_c3_dpll_simplify1(c3, cnf, res) ||
-        _c3_dpll_simplify2(c3, cnf, res) );
+static C3_STATUS _c3_dpll_simplify(C3 *c3, C3List *cnf, int32_t *res) {
+  C3_STATUS status1 = C3_NONE, status2 = C3_NONE;
+  do {
+    status1 = _c3_dpll_simplify1(c3, cnf, res);
+    if (status1 == C3_UNSAT) return C3_UNSAT;
+    status2 = _c3_dpll_simplify2(c3, cnf, res);
+    if (status2 == C3_UNSAT) return C3_UNSAT;
+  } while (status1 == C3_SIMPLIFY || status2 == C3_SIMPLIFY);
+  return C3_NONE;
 }
 
 static C3_STATUS _c3_derive_dpll(C3 *c3, C3List *cnf, int32_t *res);
@@ -386,7 +402,9 @@ static C3_STATUS _c3_derive_dpll(C3 *c3, C3List *cnf, int32_t *res) {
   C3ListIter *iter;
   C3List *disj;
   /* Simplify */
-  _c3_dpll_simplify (c3, cnf, res);
+  if (_c3_dpll_simplify (c3, cnf, res) == C3_UNSAT) {
+    return C3_UNSAT;
+  }
   if (c3_list_empty (cnf)) {
     return C3_SAT;
   }
