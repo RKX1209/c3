@@ -85,14 +85,14 @@ void _c3_print_cnf (C3List *cnf) {
   int32_t *num;
   c3_list_foreach (cnf, iter, disj) {
     debug_log (-1, "(");
-    debug_log (1, "[%p] ", iter);
+    debug_log (2, "[%p] ", iter);
     c3_list_foreach (disj, iter2, num) {
       if (*num < 0) {
         debug_log (-1, "!x%d", -(*num));
-        debug_log (1, "(%p)", num);
+        debug_log (2, "(%p)", num);
       } else {
         debug_log (-1, "x%d", *num);
-        debug_log (1, "(%p)", num);
+        debug_log (2, "(%p)", num);
       }
       if (iter2 != disj->tail) { //XXX
         debug_log (-1, " or ");
@@ -279,15 +279,17 @@ static C3_STATUS _c3_dpll_simplify1(C3 *c3, C3List *cnf, int32_t *res) {
         int32_t* onep = c3_list_head_data (disj);
         int32_t one = *onep;
         int32_t oneab = abs(one);
+        int32_t value = (one < 0) ? -1 : 1;
         debug_log (1, "found one literal %d(%p)\n", one, onep);
-        if (res[oneab - 1]) {
+        if (res[oneab - 1] && res[oneab - 1] != value) {
           /* literal is already set. inconsistent */
           return C3_UNSAT;
         }
-        res[oneab - 1] = (one < 0) ? -1 : 1;
+        res[oneab - 1] = value;
         simplify = true;
         _c3_dpll_remove2 (c3, cnf, one);
         status = C3_SIMPLIFY;
+        _c3_print_cnf (cnf);
       }
       iter = next;
     }
@@ -326,11 +328,12 @@ static bool _c3_dpll_simplify2(C3 *c3, C3List *cnf, int32_t *res) {
       continue;
     }
     absi = abs(i);
-    if (res[absi - 1]) {
+    int32_t value = (i < 0) ? -1 : 1;
+    if (res[absi - 1] && res[absi - 1] != value) {
       /* literal is already set. inconsistent */
       return C3_UNSAT;
     }
-    res[absi - 1] = (i < 0) ? -1 : 1;
+    res[absi - 1] = value;
     iter = cnf->head;
     debug_log (1, "pure literal %d\t%p\n", i, iter);
     while (iter) {
@@ -343,7 +346,7 @@ static bool _c3_dpll_simplify2(C3 *c3, C3List *cnf, int32_t *res) {
       iter = next;
     }
     status = C3_SIMPLIFY;
-    //_c3_print_cnf (cnf);
+    _c3_print_cnf (cnf);
   }
   c3_hmap_clear (c3->literals);
   return status;
