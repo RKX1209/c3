@@ -33,10 +33,11 @@ p cnf ${VALNUM} ${CNFNUM}
 cnf_rnd() {
   NAME='random cnf'
   FILE=/tmp/random.cnf
-  TESTNUM=200
+  TESTNUM=50
   for i in `seq 1 $TESTNUM`; do
     printf 'Test: %d\n' $i
-    gen_cnf $i $((${i} * 2)) $FILE
+    l=$i
+    gen_cnf $l $((${l}+10)) $FILE
     EXPECT='Verifying.... [SUCCESS]'
     run_test
   done

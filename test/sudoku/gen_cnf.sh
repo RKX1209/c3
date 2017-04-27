@@ -24,7 +24,7 @@ entry_num() {
   x=$1
   y=$2
   num=$3
-  echo $((($y * $SIZE + $x) * $SIZE + $num + 1))
+  echo $((($y * $SIZE + $x) * $SIZE + $num))
   return
 }
 
@@ -57,7 +57,7 @@ p cnf ${VALNUM} ${CNFNUM}
 
   # [Rule 2] All raws have no duplicate numbers
   for y in `seq 0 $(($SIZE-1))`; do
-    for num in `seq 0 $(($SIZE-1))`; do
+    for num in `seq 1 $(($SIZE))`; do
       #echo "y="$y,"num="$num
       for x1 in `seq 0 $(($SIZE-1))`; do
         for x2 in `seq $(($x1+1)) 1 $(($SIZE-1))`; do
@@ -74,7 +74,7 @@ p cnf ${VALNUM} ${CNFNUM}
 
   # [Rule 3] All columns have no duplicate numbers
   for x in `seq 0 $(($SIZE-1))`; do
-    for num in `seq 0 $(($SIZE-1))`; do
+    for num in `seq 1 $(($SIZE))`; do
       #echo "y="$y,"num="$num
       for y1 in `seq 0 $(($SIZE-1))`; do
         for y2 in `seq $(($y1+1)) 1 $(($SIZE-1))`; do
@@ -90,8 +90,47 @@ p cnf ${VALNUM} ${CNFNUM}
   done
 
   # [Rule 4] All blocks have no duplicate numbers
+  # XXX: bit ugly
+  for y in `seq 0 $(($SIZE/2)) $(($SIZE-1))`; do
+    for x in `seq 0 $(($SIZE/2)) $(($SIZE-1))`; do
+      for num in `seq 1 $(($SIZE))`; do
+      #echo "y="$y,"x="$x,"num="$num
+        for y1 in `seq $y 1 $(($y+$SIZE/2-1))`; do
+          for x1 in `seq $x 1 $(($x+$SIZE/2-1))`; do
+            for y2 in `seq $y 1 $(($y+$SIZE/2-1))`; do
+              for x2 in `seq $x 1 $(($x+$SIZE/2-1))`; do
+                if [ $y1 -lt $y2 ]; then
+                  continue
+                fi
+                if [ $y1 -eq $y2 -a $x1 -le $x2 ]; then
+                  continue
+                fi
+                #printf "(%d,%d) (%d,%d)\n" $y1 $x1 $y2 $x2
+                num1=`entry_num $x1 $y1 $num`
+                num2=`entry_num $x2 $y2 $num`
+                INPUT="${INPUT}$((-$num1)) $((-$num2)) 0
+"
+              done
+            done
+          done
+        done
+      done
+    done
+  done
 
-  echo "$INPUT"
+  # [Rule 5] Add literals of exist cells
+  for y in `seq 0 $(($SIZE-1))`; do
+    for x in `seq 0 $(($SIZE-1))`; do
+      cell=${BOARD[$(($y * $SIZE + $x))]}
+      if [ $cell -gt 0 ]; then
+        num=`entry_num $x $y $cell`
+        #printf "(%d,%d)(%d)=>%d\n" $y $x $num $cell
+        INPUT="${INPUT}$num 0
+"
+      fi
+    done
+  done
+  #echo "$INPUT"
   printf "%s" "${INPUT}" > ${CNFFILE}
 }
 
@@ -101,7 +140,7 @@ solve_sudoku() {
   BOARD=(0 0 0 4 0 0 1 2 0 1 4 3 4 3 2 1)
   board_to_cnf $BOARD 4 $FILE
   EXPECT='Verifying.... [SUCCESS]'
-  #run_test
+  run_test
 }
 
 solve_sudoku
