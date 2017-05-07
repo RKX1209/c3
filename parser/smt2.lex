@@ -1,7 +1,7 @@
 %{
   /* C3 Theorem Prover - Apache v2.0 - Copyright 2017 - rkx1209 */
   #include "parsesmt2.h"
-  extern char *smt2text;
+  extern char *yytext;
 %}
 
 LETTER ([a-zA-Z])
