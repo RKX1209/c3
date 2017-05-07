@@ -1,29 +1,21 @@
 # C3 Theorem Prover - Apache v2.0 - Copyright 2017 - rkx1209
-CC 			=		gcc
-CXX			=		g++
-CP			=		cp
-MAKE		=		make
-UNAME		=		$(shell uname)
-OBJS		=		core.o list.o hashmap.o bstree.o
-C3			=		c3
-INCLUDE =		include
-DEBUG		=		y
-CFLAGS	=		-I$(INCLUDE)
-CFLAGS-y= 	-g $(CFLAGS)
-SHELL :=		/bin/bash
-ifeq ($(UNAME),Linux)
-	INSTALL = /usr/bin/
-else ifeq ($(UNAME),Darwin)
-	INSTALL = /usr/local/bin
-endif
-.PHONY: all install test clean
-all: $(OBJS)
+include Makefile.common
+
+SUBDIRS	+=		parser
+OBJS		+=		core.o list.o hashmap.o bstree.o parser/parser.o
+
+.PHONY: all build-all install test clean
+all: build-all $(OBJS)
 	$(CC) -o $(C3) $(OBJS)
+build-all: $(SUBDIRS)
+	$(INFO) 'build-all'
+	$(MAKE) -C $<
 install:
 	$(CP) $(C3) $(INSTALL)
 test:
 	./run_tests.sh
-clean:
+clean: $(SUBDIRS)
 	rm -rf *.o $(C3)
+	$(MAKE) clean -C $<
 .c.o :
 	$(CC) $(CFLAGS-$(DEBUG)) -c -o $@ $<
