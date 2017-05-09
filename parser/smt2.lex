@@ -15,9 +15,9 @@
         s = cleaned;
     }
     bool found = false;
-    
-    if (found) {
 
+    if (found) {
+      return FORMID_TOK;
     } else {
       if (cleaned)
         free (cleaned);

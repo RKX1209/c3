@@ -296,19 +296,25 @@ TRUE_TOK
 an_terms:
 an_term
 {
-
+  $$ = ast_vec_new ();
+  if ($1 != NULL) {
+    ast_vec_add ($$, $1);
+  }
 }
 |
 an_terms an_term
 {
-
+  if ($1 != NULL && $2 != NULL) {
+    add_vec_add ($$, $2);
+    $$ = $1;
+  }
 }
 ;
 
 an_term:
 TERMID_TOK
 {
-
+  $$ = $1;
 }
 | LPAREN_TOK an_term RPAREN_TOK
 {

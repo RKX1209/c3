@@ -21,6 +21,6 @@ test:
 	./run_tests.sh
 clean: $(SUBDIRS)
 	rm -rf *.o $(C3)
-	rm parser/*.c parser/*.h parser/*.output
+	rm parser/lex*.c parser/parse*.c parser/parse*.h parser/*.output
 .c.o :
 	$(CC) $(CFLAGS-$(DEBUG)) -c -o $@ $<
