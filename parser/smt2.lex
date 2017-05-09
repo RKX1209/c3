@@ -2,13 +2,38 @@
   /* C3 Theorem Prover - Apache v2.0 - Copyright 2017 - rkx1209 */
   #include "parsesmt2.h"
   extern char *yytext;
+  static int lookup(char *s) {
+    char * cleaned = NULL;
+    size_t len;
+
+    // The SMTLIB2 specifications sez that the outter bars aren't part of the
+    // name. This means that we can create an empty string symbol name.
+    if (s[0] == '|' && s[(len = strlen(s))-1] == '|') {
+        cleaned = (char*) malloc(len);
+        strncpy(cleaned,s+1,len-2); // chop off first and last characters.
+        cleaned[len-2] = '\0';
+        s = cleaned;
+    }
+    bool found = false;
+    
+    if (found) {
+
+    } else {
+      if (cleaned)
+        free (cleaned);
+      return STRING_TOK;
+    }
+  }
 %}
 
 /* start states */
 %x  COMMENT
 
-LETTER ([a-zA-Z])
-DIGIT ([0-9])
+LETTER    ([a-zA-Z])
+DIGIT     ([0-9])
+OPCHAR    ([~!@$%^&*\_\-+=<>\.?/])
+
+ANYTHING  ({LETTER}|{DIGIT}|{OPCHAR})
 
 %%
 [ \n\t\r\f]   { /* skip */ }
@@ -135,5 +160,10 @@ bv{DIGIT}+    { yylval.str = strdup(yytext + 2); return BVCONST_DECIMAL_TOK; }
 "select"        { return SELECT_TOK; }
 "store"         { return STORE_TOK; }
 
+({LETTER}|{OPCHAR})({ANYTHING})* { return lookup (yytext); }
 . { smt2error("Illegal input character."); }
 %%
+
+int c3_smt2_parse() {
+  return yyparse();
+}

@@ -1,7 +1,9 @@
 %{
+  #include <parser/ast.h>
+  #include <parser/parser.h>
   /* C3 Theorem Prover - Apache v2.0 - Copyright 2017 - rkx1209 */
   int yyerror(const char *s) {
-    //printf ("");
+    printf ("syntax error: line %d token: %s\n", yylineno, yytext);
     return 1;
   }
 %}
@@ -9,17 +11,25 @@
 %union {
   unsigned uintval;
   char *str;
+  ASTNode *node;
+  ASTVec *vec;
 };
 
 %start cmd
+
+%type <node> status
+%type <vec> an_formulas an_terms function_params an_mixed
+%type <node> an_term  an_formula function_param
 
 %token <uintval> NUMERAL_TOK
 %token <str> BVCONST_DECIMAL_TOK
 %token <str> BVCONST_BINARY_TOK
 %token <str> BVCONST_HEXIDECIMAL_TOK
+
  /* We have this so we can parse :smt-lib-version 2.0 */
 %token  DECIMAL_TOK
 
+%token <node> FORMID_TOK TERMID_TOK
 %token <str> STRING_TOK BITVECTOR_FUNCTIONID_TOK BOOLEAN_FUNCTIONID_TOK
 
 /* set-info tokens */
@@ -120,12 +130,332 @@
 %token NOTES_TOK
 %token LOGIC_TOK
 %token SET_OPTION_TOK
+
 /* Functions for QF_ABV. */
 %token SELECT_TOK;
 %token STORE_TOK;
 %token END 0 "end of file"
 
 %%
-cmd:
-  { }
+cmd: commands END
+{
+  YYACCEPT;
+}
+;
+
+commands: commands LPAREN_TOK cmdi RPAREN_TOK
+| LPAREN_TOK cmdi RPAREN_TOK
+{
+
+}
+;
+
+cmdi:
+    ASSERT_TOK an_formula:
+{
+
+}
+;
+an_mixed:
+an_formula
+{
+
+}
+|
+an_term
+{
+
+}
+|
+an_mixed an_formula
+{
+
+}
+|
+an_mixed an_term
+{
+
+}
+;
+
+an_formulas:
+an_formula
+{
+
+}
+|
+an_formulas an_formula
+{
+
+}
+;
+
+an_formula:
+TRUE_TOK
+{
+
+}
+| FALSE_TOK
+{
+
+}
+| FORMID_TOK
+{
+
+}
+| LPAREN_TOK EQ_TOK an_term an_term RPAREN_TOK
+{
+
+}
+| LPAREN_TOK DISTINCT_TOK an_terms RPAREN_TOK
+{
+
+}
+| LPAREN_TOK DISTINCT_TOK an_formulas RPAREN_TOK
+{
+
+}
+| LPAREN_TOK BVSLT_TOK an_term an_term RPAREN_TOK
+{
+
+}
+| LPAREN_TOK BVSLE_TOK an_term an_term RPAREN_TOK
+{
+
+}
+| LPAREN_TOK BVSGT_TOK an_term an_term RPAREN_TOK
+{
+
+}
+| LPAREN_TOK BVSGE_TOK an_term an_term RPAREN_TOK
+{
+
+}
+| LPAREN_TOK BVLT_TOK an_term an_term RPAREN_TOK
+{
+
+}
+| LPAREN_TOK BVLE_TOK an_term an_term RPAREN_TOK
+{
+
+}
+| LPAREN_TOK BVGT_TOK an_term an_term RPAREN_TOK
+{
+
+}
+| LPAREN_TOK BVGE_TOK an_term an_term RPAREN_TOK
+{
+
+}
+| LPAREN_TOK an_formula RPAREN_TOK
+{
+  $$ = $2;
+}
+| LPAREN_TOK NOT_TOK an_formula RPAREN_TOK
+{
+
+}
+| LPAREN_TOK IMPLIES_TOK an_formula an_formula RPAREN_TOK
+{
+
+}
+| LPAREN_TOK ITE_TOK an_formula an_formula an_formula RPAREN_TOK
+{
+
+}
+| LPAREN_TOK AND_TOK an_formulas RPAREN_TOK
+{
+
+}
+| LPAREN_TOK OR_TOK an_formulas RPAREN_TOK
+{
+
+}
+| LPAREN_TOK XOR_TOK an_formula an_formula RPAREN_TOK
+{
+
+}
+| LPAREN_TOK EQ_TOK an_formula an_formula RPAREN_TOK
+{
+
+}
+| LPAREN_TOK BOOLEAN_FUNCTIONID_TOK an_mixed RPAREN_TOK
+{
+
+}
+| BOOLEAN_FUNCTIONID_TOK an_mixed RPAREN_TOK
+{
+
+}
+| BOOLEAN_FUNCTIONID_TOK
+{
+
+}
+;
+
+an_terms:
+an_term
+{
+
+}
+|
+an_terms an_term
+{
+
+}
+;
+
+an_term:
+TERMID_TOK
+{
+
+}
+| LPAREN_TOK an_term RPAREN_TOK
+{
+  $$ = $2;
+}
+| SELECT_TOK an_term an_term
+{
+
+}
+| STORE_TOK an_term an_term an_term
+{
+
+}
+| LPAREN_TOK UNDERSCORE_TOK BVEXTRACT_TOK  NUMERAL_TOK  NUMERAL_TOK RPAREN_TOK an_term
+{
+
+}
+| LPAREN_TOK UNDERSCORE_TOK BVZX_TOK  NUMERAL_TOK  RPAREN_TOK an_term
+{
+}
+| LPAREN_TOK UNDERSCORE_TOK BVSX_TOK  NUMERAL_TOK  RPAREN_TOK an_term
+{
+}
+| ITE_TOK an_formula an_term an_term
+{
+
+}
+| BVCONCAT_TOK an_term an_term
+{
+}
+| BVNOT_TOK an_term
+{
+}
+| BVNEG_TOK an_term
+{
+}
+| BVAND_TOK an_term an_term
+{
+
+}
+| BVOR_TOK an_term an_term
+{
+
+}
+| BVXOR_TOK an_term an_term
+{
+
+}
+| BVXNOR_TOK an_term an_term
+{
+
+}
+| BVCOMP_TOK an_term an_term
+{
+
+}
+| BVSUB_TOK an_term an_term
+{
+
+}
+| BVPLUS_TOK an_term an_term
+{
+
+}
+| BVMULT_TOK an_term an_term
+{
+
+}
+| BVDIV_TOK an_term an_term
+{
+
+}
+| BVMOD_TOK an_term an_term
+{
+
+}
+| SBVDIV_TOK an_term an_term
+{
+
+}
+| SBVREM_TOK an_term an_term
+{
+
+}
+| SBVMOD_TOK an_term an_term
+{
+
+}
+| BVNAND_TOK an_term an_term
+{
+
+}
+| BVNOR_TOK an_term an_term
+{
+
+}
+| BVLEFTSHIFT_1_TOK an_term an_term
+{
+
+}
+| BVRIGHTSHIFT_1_TOK an_term an_term
+{
+
+}
+| BVARITHRIGHTSHIFT_TOK an_term an_term
+{
+
+}
+| LPAREN_TOK UNDERSCORE_TOK BVROTATE_LEFT_TOK  NUMERAL_TOK  RPAREN_TOK an_term
+{
+
+}
+| LPAREN_TOK UNDERSCORE_TOK BVROTATE_RIGHT_TOK  NUMERAL_TOK  RPAREN_TOK an_term
+{
+
+}
+| LPAREN_TOK UNDERSCORE_TOK BVREPEAT_TOK  NUMERAL_TOK RPAREN_TOK an_term
+{
+
+}
+| UNDERSCORE_TOK BVCONST_DECIMAL_TOK NUMERAL_TOK
+{
+
+}
+| BVCONST_HEXIDECIMAL_TOK
+{
+
+}
+| BVCONST_BINARY_TOK
+{
+
+}
+| LPAREN_TOK BITVECTOR_FUNCTIONID_TOK an_mixed RPAREN_TOK
+{
+
+}
+| BITVECTOR_FUNCTIONID_TOK
+{
+
+}
+| LPAREN_TOK EXCLAIMATION_MARK_TOK an_term NAMED_ATTRIBUTE_TOK STRING_TOK RPAREN_TOK
+{
+
+}
+| LPAREN_TOK LET_TOK LPAREN_TOK
+{
+
+}
+;
 %%
