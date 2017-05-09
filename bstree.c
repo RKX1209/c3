@@ -76,7 +76,7 @@ C3BsTreeIter *c3_bstree_add (C3BsTree *bstree, void *data, C3BsComparator cmp) {
   }
 
   /* Balancing */
-  c3_bstree_balance (bstree);
+  //c3_bstree_balance (bstree);
 }
 
 C3BsTreeIter *c3_bstree_sub_min (C3BsTreeIter *root, C3BsComparator cmp) {

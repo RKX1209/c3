@@ -2,42 +2,15 @@
 #include <unistd.h>
 #include <stdarg.h>
 #include <stdbool.h>
-#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <c3_list.h>
-#include <c3_hashmap.h>
-#include <c3_bstree.h>
+#include <c3_core.h>
+#include <c3_utils.h>
+#include <parser/parsecnf.h>
 
-#define DEBUG_LEVEL -1
-
-#define C3_UNSAT    0   //unatisfiable
-#define C3_SAT      1   //satisfiable
-#define C3_INVALID  2   //error
-#define C3_SIMPLIFY 3   //can still simplify
-#define C3_NONE     4   //none
-
-typedef uint8_t C3_STATUS;
 char *status_str[] = {"UNSATISFIABLE", "SATISFIABLE", "ERROR" };
-
-typedef struct c3_t {
-  int32_t valnum;
-  int32_t disjnum;
-  C3List *cnf; // <cnf[i] = i-th Disjunction>
-  C3Hmap *literals;
-  C3BsTree *literals2;
-}C3;
-static C3 c3;
-
-static inline debug_log (int level, const char *format, ...) {
-  va_list ap;
-  va_start (ap, format);
-  if (level <= DEBUG_LEVEL) {
-    vfprintf (stderr, format, ap);
-  }
-  va_end (ap);
-}
+C3 c3;
 
 static int help() {
   printf ("Usage: c3 <cnf-file>\n");
@@ -47,69 +20,6 @@ static int help() {
 static int version() {
   printf ("c3 1.0.0 \n");
   return 0;
-}
-
-static int c3_compare_symbol (const int32_t *a, const int32_t *b) {
-  int32_t ai, bi;
-  ai = (*a < 0) ? -(*a) : *a;
-  bi = (*b < 0) ? -(*b) : *b;
-  if (ai == bi) {
-    return 0;
-  } else if (ai < bi) {
-    return -1;
-  }
-  return 1;
-}
-
-static int c3_compare_value (const int32_t *a, const int32_t *b) {
-  int32_t ai, bi;
-  ai = *a;
-  bi = *b;
-  if (ai == bi) {
-    return 0;
-  } else if (ai < bi) {
-    return -1;
-  }
-  return 1;
-}
-
-static void* c3_copy_value (const int32_t *a) {
-  int32_t *res = (int32_t*) malloc (sizeof(int32_t));
-  *res = *a;
-  return (void *)res;
-}
-
-void _c3_print_cnf (C3List *cnf) {
-  C3ListIter *iter, *iter2;
-  C3List *disj;
-  int32_t *num;
-  c3_list_foreach (cnf, iter, disj) {
-    debug_log (-1, "(");
-    debug_log (2, "[%p] ", iter);
-    c3_list_foreach (disj, iter2, num) {
-      if (*num < 0) {
-        debug_log (-1, "!x%d", -(*num));
-        debug_log (2, "(%p)", num);
-      } else {
-        debug_log (-1, "x%d", *num);
-        debug_log (2, "(%p)", num);
-      }
-      if (iter2 != disj->tail) { //XXX
-        debug_log (-1, " or ");
-      }
-    }
-    debug_log (-1, ")");
-    if (iter == cnf->tail) {
-      debug_log (-1, "\n");
-    } else {
-      debug_log (-1, " and ");
-    }
-  }
-}
-
-void c3_print_cnf (C3 *c3) {
-  //printf ("size=%d, val=%d\n", c3->disjnum, c3->valnum);
-  _c3_print_cnf (c3->cnf);
 }
 
 C3List* c3_dup_cnf (C3List *cnf) {
@@ -134,107 +44,6 @@ void c3_del_cnf (C3List *cnf) {
     iter = next;
   }
   free (cnf);
-}
-
-static void skip_until_line (char **p) {
-  while (**p != '\n' && **p != '\0') {
-    ++(*p);
-  }
-}
-
-static void skip_lines (char **p) {
-  while (**p == ' ') {
-    ++(*p);
-  }
-}
-
-static inline bool c3_is_digit (char c) {
-  return '0' <= c && c <= '9';
-}
-
-static int32_t get_digit_long (char **p) {
-  int32_t res = 0;
-  int sign = 1;
-  if (**p == '-') {
-    sign = -1;
-    (*p)++;
-  }
-  //XXX may overflow. and must treat invalid num, like 8p30
-  while (c3_is_digit (**p)) {
-    res *= 10;
-    res += (**p - '0');
-    (*p)++;
-  }
-  res *= sign;
-  return res;
-}
-
-int c3_parse_cnffile (C3 *c3, char *data) {
-  int32_t inum = 0, i = 0;
-  int32_t *inump = NULL;
-  C3ListIter *iter;
-  C3List *disj;
-  bool valid = false;
-
-  while (*data) {
-    if (valid) {
-      debug_log (1, "size=%d, val=%d\n", c3->disjnum, c3->valnum);
-      for (i = 0; i < c3->disjnum; i++) {
-        disj = c3_list_new ();
-        c3_list_append (c3->cnf, disj);
-        /* disjunctive inputs must be terminated by last '0' */
-        while (inum = get_digit_long (&data)) {
-          if (!(++data)) {// inum != 0 && data_next = '\0' (i.e not ended by '0')
-            c3_list_free (disj);
-            c3_list_free (c3->cnf);
-            goto fail;
-          }
-          inump = malloc (sizeof(int));
-          *inump = inum;
-          debug_log (1, "%d ", inum);
-          c3_list_append (disj, inump);
-        }
-        debug_log (1, "\n");
-        /* data may be pointing EOF or '\0' when input is not ended with '\n' */
-        data++; //skip '\n'
-      }
-    } else {
-      switch (data[0]) {
-        case 'c':
-          debug_log (1, "c: comment\n");
-          data++; //skip 'c'
-          skip_until_line (&data);
-          data++; //skip '\n'
-          break;
-        case 'p':
-          debug_log (1, "p: header\n");
-          if (!(++data) || strncmp (++data, "cnf", 3) != 0) {
-            goto fail;
-          }
-          data += 3;
-          if (!(data++) || !(inum = get_digit_long (&data))) {
-            goto fail;
-          }
-          c3->valnum = inum;
-          if (!(data++) || !(inum = get_digit_long (&data))) {
-            goto fail;
-          }
-          c3->disjnum = inum;
-          skip_until_line (&data);
-          data++; //skip '\n'
-          valid = true;
-          break;
-        default:
-          fprintf (stderr, "cannnot read '%c'\n", data[0]);
-          goto fail;
-      }
-    }
-    skip_lines (&data);
-  }
-  return 1;
-fail:
-  fprintf (stderr, "parse_cnf: failed to parse cnf file\n");
-  return 0;
 }
 
 /* Delete '-l' entries and entire lists that contain 'l' */
@@ -440,39 +249,6 @@ void c3_fini (C3 *c3) {
   c3_del_cnf (c3->cnf);
   c3_hmap_free (c3->literals);
   c3_bstree_free (c3->literals2);
-}
-
-char* c3_file_read (FILE *fp, long *len) {
-  char *buf;
-  long sz;
-  if (fp) {
-    fseek (fp, 0, SEEK_END);
-    sz = ftell (fp);
-    buf = (char *) calloc (sz + 1, sizeof(char));
-    if (!buf) {
-      return NULL;
-    }
-    fseek (fp, 0, SEEK_SET);
-    fread (buf, sizeof(char), sz, fp);
-    if (len) {
-      *len = sz;
-    }
-    return buf;
-  }
-  fprintf (stderr, "file_read: cannot read file\n");
-  return NULL;
-}
-
-FILE* c3_file_open (const char *file, const char *mode) {
-  FILE* fp;
-  if (!file || !mode) {
-    return NULL;
-  }
-  if ((fp = fopen (file, mode)) == NULL) {
-    fprintf (stderr, "file_open: cannot open sucn file %s\n", file);
-    return NULL;
-  }
-  return fp;
 }
 
 /* XXX: uncessary function. should duplicate it */

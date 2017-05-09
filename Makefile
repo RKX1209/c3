@@ -5,22 +5,23 @@ default: all
 include Makefile.common
 
 SUBDIRS	+=		parser
-OBJS		+=		core.o list.o hashmap.o bstree.o
+OBJS		+=		core.o list.o hashmap.o bstree.o utils.o
 
 include parser/Makefile
 
-.PHONY: all build-all install test clean
-all: build-all $(OBJS)
-	$(CC) -o $(C3) $(OBJS) $(LDFLAGS)
-build-all: $(SUBDIRS)
+.PHONY: all install test clean
+all: $(SUBDIRS)
 	$(INFO) 'build-all'
 	$(MAKE) -C $<
+	$(MAKE) $(C3)
+$(C3): $(OBJS)
+	$(CC) -o $(C3) $(OBJS) $(LDFLAGS)
 install:
 	$(CP) $(C3) $(INSTALL)
 test:
 	./run_tests.sh
-clean: $(SUBDIRS)
-	rm -rf *.o $(C3)
-	rm parser/lex*.c parser/parse*.c parser/parse*.h parser/*.output
+clean:
+	rm -rf *.o */*.o $(C3)
+	rm parser/lexsmt2.c parser/parsesmt2.c parser/parsesmt2.h parser/*.output
 .c.o :
 	$(CC) $(CFLAGS-$(DEBUG)) -c -o $@ $<
