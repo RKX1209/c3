@@ -1,6 +1,9 @@
 %{
   /* C3 Theorem Prover - Apache v2.0 - Copyright 2017 - rkx1209 */
+  #include <parser/ast.h>
   #include "parsesmt2.h"
+  #include <stdbool.h>
+  #include <stdlib.h>
   extern char *yytext;
   static int lookup(char *s) {
     char * cleaned = NULL;
@@ -37,7 +40,7 @@ ANYTHING  ({LETTER}|{DIGIT}|{OPCHAR})
 
 %%
 [ \n\t\r\f]   { /* skip */ }
-{DIGIT}+      { yylval.uintval = stroul(yytext, 10, base); return NUMERAL_TOK; }
+{DIGIT}+      { yylval.uintval = strtoul(yytext, NULL, 10); return NUMERAL_TOK; }
 
 bv{DIGIT}+    { yylval.str = strdup(yytext + 2); return BVCONST_DECIMAL_TOK; }
 #b{DIGIT}+    { yylval.str = strdup(yytext + 2); return BVCONST_BINARY_TOK; }
@@ -161,7 +164,7 @@ bv{DIGIT}+    { yylval.str = strdup(yytext + 2); return BVCONST_DECIMAL_TOK; }
 "store"         { return STORE_TOK; }
 
 ({LETTER}|{OPCHAR})({ANYTHING})* { return lookup (yytext); }
-. { smt2error("Illegal input character."); }
+. { yyerror("Illegal input character."); }
 %%
 
 int c3_smt2_parse() {

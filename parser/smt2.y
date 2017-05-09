@@ -1,7 +1,11 @@
 %{
+  #include <stdio.h>
   #include <parser/ast.h>
   #include <parser/parser.h>
   /* C3 Theorem Prover - Apache v2.0 - Copyright 2017 - rkx1209 */
+  extern char* yytext;
+  extern int yylineno;
+
   int yyerror(const char *s) {
     printf ("syntax error: line %d token: %s\n", yylineno, yytext);
     return 1;
