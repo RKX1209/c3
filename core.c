@@ -283,12 +283,12 @@ bool c3_verify_sat (C3 *c3, int32_t *res) {
 
 /* Lookup symbol */
 ASTNode* c3_lookup_symbol (C3 *c3, char *symbol) {
-  return c3_list_find (c3->symbols, symbol, c3_compare_value);
+  return (ASTNode*)c3_map_get (c3->symbols, symbol);
 }
 
 /* Add symbol */
-void c3_add_symbol (C3 *c3, char *symbol) {
-
+void c3_add_symbol (C3 *c3, char *symbol, ASTNode *n) {
+  c3_map_set (c3->symbols, symbol, n);
 }
 
 int main(int argc, char **argv, char **envp) {
