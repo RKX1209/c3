@@ -5,6 +5,7 @@
 #include <c3_list.h>
 #include <c3_hashmap.h>
 #include <c3_bstree.h>
+#include <parser/ast.h>
 
 #define C3_UNSAT    0   //unatisfiable
 #define C3_SAT      1   //satisfiable
@@ -24,4 +25,7 @@ typedef struct c3_t {
 }C3;
 
 extern C3 c3;
+
+ASTNode* c3_lookup_symbol (C3 *c3, char *symbol);
+
 #endif

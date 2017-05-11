@@ -4,6 +4,8 @@
   #include "parsesmt2.h"
   #include <stdbool.h>
   #include <stdlib.h>
+  #include <c3_core.h>
+
   extern char *yytext;
   static int lookup(char *s) {
     char * cleaned = NULL;
@@ -18,8 +20,15 @@
         s = cleaned;
     }
     bool found = false;
-
+    ASTNode *sym_ast;
+    if ((sym_ast = c3_lookup_symbol(&c3, s))) {
+      found = true;
+    }
     if (found) {
+      if (cleaned) {
+        free (cleaned);
+      }
+      yylval.node = ast_node_dup (sym_ast);
       return FORMID_TOK;
     } else {
       if (cleaned)

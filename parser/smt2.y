@@ -156,10 +156,190 @@ commands: commands LPAREN_TOK cmdi RPAREN_TOK
 
 cmdi:
     ASSERT_TOK an_formula:
+    {
+
+    }
+|
+    CHECK_SAT_TOK
+    {
+
+    }
+|
+    CHECK_SAT_ASSUMING_TOK LPAREN_TOK an_term RPAREN_TOK
+    {
+
+    }
+|
+    DECLARE_CONST_TOK LPAREN_TOK an_term RPAREN_TOK
+    {
+
+    }
+|
+    DECLARE_FUNCTION_TOK var_decl
+    {
+
+    }
+|
+    DEFINE_FUNCTION_TOK function_def
+    {
+
+    }
+|
+    ECHO_TOK STRING_TOK
+    {
+      printf ("¥"%s¥"¥n", $2);
+    }
+|
+    EXIT_TOK
+    {
+       YYACCEPT;
+    }
+|
+    GET_MODEL_TOK
+    {
+    }
+|
+    GET_VALUE_TOK LPAREN_TOK an_mixed RPAREN_TOK
+    {
+
+    }
+|
+    SET_OPTION_TOK COLON_TOK STRING_TOK STRING_TOK
+    {
+
+    }
+|
+    SET_OPTION_TOK COLON_TOK STRING_TOK FALSE_TOK
+    {
+
+    }
+|
+    SET_OPTION_TOK COLON_TOK STRING_TOK TRUE_TOK
+    {
+
+    }
+|
+    PUSH_TOK NUMERAL_TOK
+    {
+
+    }
+|
+    POP_TOK NUMERAL_TOK
+    {
+
+    }
+|
+    RESET_TOK
+    {
+
+    }
+|
+    LOGIC_TOK STRING_TOK
+    {
+
+    }
+|
+    NOTES_TOK attribute STRING_TOK
+    {
+
+    }
+|
+    NOTES_TOK attribute DECIMAL_TOK
+    {}
+|
+    NOTES_TOK attribute
+    {}
+;
+
+function_param:
+/* (arg (_ BitVec 8)) */
+LPAREN_TOK STRING_TOK LPAREN_TOK UNDERSCORE_TOK BITVEC_TOK NUMERAL_TOK RPAREN_TOK RPAREN_TOK
+{
+
+};
+
+/* Returns a vector of parameters.*/
+function_params:
+function_param
+{
+  $$ = ast_vec_new ();
+  if ($1 != NULL) {
+    ast_vec_add ($$, $1);
+  }
+}
+| function_params function_param
+{
+  $$ = $1;
+  ast_vec_add ($$, $2);
+};
+
+function_def:
+/* (func (<params>) (_ BitVec 8) <term>) */
+STRING_TOK LPAREN_TOK function_params RPAREN_TOK LPAREN_TOK UNDERSCORE_TOK BITVEC_TOK NUMERAL_TOK RPAREN_TOK an_term
+{
+
+}
+| /* (func () (_ BitVec 8) <term>) */
+STRING_TOK LPAREN_TOK RPAREN_TOK LPAREN_TOK UNDERSCORE_TOK BITVEC_TOK NUMERAL_TOK RPAREN_TOK an_term
+{
+
+}
+| /* (func (<params>) Bool <formula>) */
+STRING_TOK LPAREN_TOK function_params RPAREN_TOK BOOL_TOK an_formula
+{
+}
+| /* (func () Bool <formula>) */
+STRING_TOK LPAREN_TOK RPAREN_TOK BOOL_TOK an_formula
+{
+
+}
+| /* (func (<params>) (Array (_ BitVec 8) (_ BitVec 8)) <term>) */
+STRING_TOK LPAREN_TOK function_params RPAREN_TOK LPAREN_TOK ARRAY_TOK LPAREN_TOK UNDERSCORE_TOK BITVEC_TOK NUMERAL_TOK RPAREN_TOK LPAREN_TOK UNDERSCORE_TOK BITVEC_TOK NUMERAL_TOK RPAREN_TOK RPAREN_TOK an_term
+{
+
+}
+| /* (func () (Array (_ BitVec 8) (_ BitVec 8)) <term>) */
+STRING_TOK LPAREN_TOK RPAREN_TOK LPAREN_TOK ARRAY_TOK LPAREN_TOK UNDERSCORE_TOK BITVEC_TOK NUMERAL_TOK RPAREN_TOK LPAREN_TOK UNDERSCORE_TOK BITVEC_TOK NUMERAL_TOK RPAREN_TOK RPAREN_TOK an_term
 {
 
 }
 ;
+
+status:
+STRING_TOK {
+ $$ = NULL;
+}
+;
+
+attribute:
+SOURCE_TOK
+{}
+| CATEGORY_TOK
+{}
+| DIFFICULTY_TOK
+{}
+| VERSION_TOK
+{}
+| STATUS_TOK status
+{}
+;
+
+var_decl:
+/* (func () (_ BitVec 8)) */
+STRING_TOK LPAREN_TOK RPAREN_TOK LPAREN_TOK UNDERSCORE_TOK BITVEC_TOK NUMERAL_TOK RPAREN_TOK
+{
+
+} /* (func () Bool) */
+| STRING_TOK LPAREN_TOK RPAREN_TOK BOOL_TOK
+{
+
+} /* (func () (Array (_ BitVec 8) (_ BitVec 8))) */
+| STRING_TOK LPAREN_TOK RPAREN_TOK LPAREN_TOK ARRAY_TOK LPAREN_TOK UNDERSCORE_TOK BITVEC_TOK NUMERAL_TOK RPAREN_TOK LPAREN_TOK UNDERSCORE_TOK BITVEC_TOK NUMERAL_TOK RPAREN_TOK RPAREN_TOK
+{
+
+}
+;
+
 an_mixed:
 an_formula
 {
