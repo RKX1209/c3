@@ -274,7 +274,11 @@ function_def:
 /* (func (<params>) (_ BitVec 8) <term>) */
 STRING_TOK LPAREN_TOK function_params RPAREN_TOK LPAREN_TOK UNDERSCORE_TOK BITVEC_TOK NUMERAL_TOK RPAREN_TOK an_term
 {
-
+  if ($10->value_width != $8) {
+    char msg[128];
+    sprintf(msg, "Different bit-widths specified: %d %d", $10->GetValueWidth(), $8);
+    yyerror(msg);
+  }
 }
 | /* (func () (_ BitVec 8) <term>) */
 STRING_TOK LPAREN_TOK RPAREN_TOK LPAREN_TOK UNDERSCORE_TOK BITVEC_TOK NUMERAL_TOK RPAREN_TOK an_term

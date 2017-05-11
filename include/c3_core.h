@@ -16,6 +16,12 @@
 
 typedef uint8_t C3_STATUS;
 
+typedef struct function_t {
+  ASTVec params;
+  ASTNode *function;
+  char *name;
+}Function;
+
 typedef struct c3_t {
   int32_t valnum;
   int32_t disjnum;
@@ -23,10 +29,14 @@ typedef struct c3_t {
   C3Hmap *literals;
   C3BsTree *literals2;
   C3Map *symbols;
+  C3Map *funcnames;
+  int32_t symbol_num;
 }C3;
 
 extern C3 c3;
 
-ASTNode* c3_lookup_symbol (C3 *c3, char *symbol);
-
+ASTNode* c3_lookup_symbol(C3 *c3, char *symbol);
+void c3_add_symbol(C3 *c3, char *symbol, ASTNode *n);
+ASTNode* c3_create_variable(int index_width, int value_width, char *name);
+void c3_store_function(C3 *c3, char *name, ASTVec params, ASTNode* function);
 #endif

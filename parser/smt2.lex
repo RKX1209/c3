@@ -1,11 +1,10 @@
 %{
   /* C3 Theorem Prover - Apache v2.0 - Copyright 2017 - rkx1209 */
-  #include <parser/ast.h>
-  #include "parsesmt2.h"
   #include <stdbool.h>
   #include <stdlib.h>
   #include <c3_core.h>
-
+  #include "parsesmt2.h"
+  
   extern char *yytext;
   static int lookup(char *s) {
     char * cleaned = NULL;

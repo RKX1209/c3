@@ -244,6 +244,8 @@ void c3_init (C3 *c3) {
   c3->literals = c3_hmap_new (100); //TODO: implment rehash function
   c3->literals2 = c3_bstree_new ();
   c3->symbols = c3_map_new ();
+  c3->funcnames = c3_map_new ();
+  c3->symbol_num = 0;
 }
 
 void c3_fini (C3 *c3) {
@@ -251,6 +253,7 @@ void c3_fini (C3 *c3) {
   c3_hmap_free (c3->literals);
   c3_bstree_free (c3->literals2);
   c3_map_free (c3->symbols);
+  c3_map_free (c3->funcnames);
 }
 
 /* XXX: uncessary function. should duplicate it */
@@ -288,7 +291,42 @@ ASTNode* c3_lookup_symbol (C3 *c3, char *symbol) {
 
 /* Add symbol */
 void c3_add_symbol (C3 *c3, char *symbol, ASTNode *n) {
+  if (!c3_map_find (c3->symbols, symbol)) {
+    c3->symbol_num++;
+  }
   c3_map_set (c3->symbols, symbol, n);
+}
+
+ASTNode *c3_create_variable (int index_width, int value_width, char *name) {
+  ASTNode *node = malloc (sizeof(ASTNode));
+  if (!node) {
+    return NULL;
+  }
+  node->name = name;
+  node->index_width = index_width;
+  node->value_width = value_width;
+  return node;
+}
+
+void c3_store_function(C3 *c3, char *name, ASTVec params, ASTNode* function) {
+  Function *f = malloc (sizeof(Function));
+  C3ListIter *iter;
+  ASTNode *node;
+  const char *prefix = "arg";
+  size_t i;
+  if (!f) {
+    return;
+  }
+  f->name = strdup (name);
+  c3_list_foreach (params, iter, node) {
+    char buf = malloc (sizeof (char) * (strlen (prefix) + 34));
+    sprintf (buf, "%s_%d", prefix, c3->symbol_num);
+    ASTNode *param = c3_create_variable (node->index_width, node->value_width, buf);
+    ast_vec_add (f->params, param);
+  }
+  // XXX:
+  f->function = function;
+  c3_map_set (c3->funcnames, f->name, f);
 }
 
 int main(int argc, char **argv, char **envp) {

@@ -16,6 +16,9 @@ typedef struct ast_node_t {
   ASTKind kind;
   ASTVec children;
   Type type;
+  int value_width;
+  int index_width;
+  char *name;
 }ASTNode;
 
 ASTNode* ast_create_node(ASTKind kind, ASTVec children);
@@ -24,5 +27,6 @@ ASTNode* ast_dup_node(ASTNode* n);
 void ast_del_node(ASTNode *n);
 ASTVec   ast_vec_new();
 ASTNode* ast_vec_add(ASTVec vec, ASTNode* node);
+size_t   ast_vec_size(ASTVec vec) { return vec->length; }
 Type     ast_get_type(ASTNode *node) { return node->type; }
 #endif
