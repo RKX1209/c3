@@ -34,6 +34,10 @@ ASTNode* ast_create_node2(ASTKind kind, ASTNode* n1, ASTNode* n2) {
   return ast_create_node (kind, vec);
 }
 
-ASTNode* ast_node_dup(ASTNode* n) {
+void ast_del_node(ASTNode *n) {
+  free (n);
+}
+
+ASTNode* ast_dup_node(ASTNode* n) {
   return ast_create_node (n->kind, n->children);
 }

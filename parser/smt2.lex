@@ -28,7 +28,7 @@
       if (cleaned) {
         free (cleaned);
       }
-      yylval.node = ast_node_dup (sym_ast);
+      yylval.node = ast_dup_node (sym_ast);
       return FORMID_TOK;
     } else {
       if (cleaned)

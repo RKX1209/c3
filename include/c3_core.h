@@ -5,6 +5,7 @@
 #include <c3_list.h>
 #include <c3_hashmap.h>
 #include <c3_bstree.h>
+#include <c3_ordered_map.h>
 #include <parser/ast.h>
 
 #define C3_UNSAT    0   //unatisfiable
@@ -21,7 +22,7 @@ typedef struct c3_t {
   C3List *cnf; // <cnf[i] = i-th Disjunction>
   C3Hmap *literals;
   C3BsTree *literals2;
-  C3BsTree *symbols;
+  C3Map *symbols;
 }C3;
 
 extern C3 c3;

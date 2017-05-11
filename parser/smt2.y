@@ -149,15 +149,12 @@ cmd: commands END
 
 commands: commands LPAREN_TOK cmdi RPAREN_TOK
 | LPAREN_TOK cmdi RPAREN_TOK
-{
-
-}
+{}
 ;
 
 cmdi:
     ASSERT_TOK an_formula:
     {
-
     }
 |
     CHECK_SAT_TOK

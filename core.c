@@ -243,14 +243,14 @@ void c3_init (C3 *c3) {
   c3->cnf = c3_list_new ();
   c3->literals = c3_hmap_new (100); //TODO: implment rehash function
   c3->literals2 = c3_bstree_new ();
-  c3->symbols = c3_bstree_new ();
+  c3->symbols = c3_map_new ();
 }
 
 void c3_fini (C3 *c3) {
   c3_del_cnf (c3->cnf);
   c3_hmap_free (c3->literals);
   c3_bstree_free (c3->literals2);
-  c3_bstree_free (c3->symbols);
+  c3_map_free (c3->symbols);
 }
 
 /* XXX: uncessary function. should duplicate it */
@@ -284,6 +284,11 @@ bool c3_verify_sat (C3 *c3, int32_t *res) {
 /* Lookup symbol */
 ASTNode* c3_lookup_symbol (C3 *c3, char *symbol) {
   return c3_list_find (c3->symbols, symbol, c3_compare_value);
+}
+
+/* Add symbol */
+void c3_add_symbol (C3 *c3, char *symbol) {
+
 }
 
 int main(int argc, char **argv, char **envp) {

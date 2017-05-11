@@ -5,7 +5,7 @@ default: all
 include Makefile.common
 
 SUBDIRS	+=		parser
-OBJS		+=		core.o list.o hashmap.o bstree.o utils.o
+OBJS		+=		core.o list.o hashmap.o bstree.o utils.o ordered_map.o
 
 include parser/Makefile
 
