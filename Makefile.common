@@ -9,7 +9,7 @@ INCLUDE =		include
 DEBUG		=		y
 CFLAGS	=		-I$(INCLUDE)
 CFLAGS-y= 	-g $(CFLAGS)
-LDFLAGS	=		-lfl
+LDFLAGS	=		
 SHELL :=		/bin/bash
 INFO    =   @: echo ' '
 ifeq ($(UNAME),Linux)

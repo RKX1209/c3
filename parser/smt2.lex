@@ -4,7 +4,7 @@
   #include <stdlib.h>
   #include <c3_core.h>
   #include "parsesmt2.h"
-  
+
   extern char *yytext;
   static int lookup(char *s) {
     char * cleaned = NULL;
@@ -36,6 +36,8 @@
     }
   }
 %}
+
+%option noyywrap
 
 /* start states */
 %x  COMMENT
