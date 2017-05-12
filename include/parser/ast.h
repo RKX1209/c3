@@ -27,6 +27,6 @@ ASTNode* ast_dup_node(ASTNode* n);
 void ast_del_node(ASTNode *n);
 ASTVec   ast_vec_new();
 ASTNode* ast_vec_add(ASTVec vec, ASTNode* node);
-size_t   ast_vec_size(ASTVec vec) { return vec->length; }
-Type     ast_get_type(ASTNode *node) { return node->type; }
+size_t   ast_vec_size(ASTVec vec);
+Type     ast_get_type(ASTNode *node);
 #endif

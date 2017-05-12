@@ -41,3 +41,11 @@ void ast_del_node(ASTNode *n) {
 ASTNode* ast_dup_node(ASTNode* n) {
   return ast_create_node (n->kind, n->children);
 }
+
+size_t ast_vec_size(ASTVec vec) {
+  return vec->length;
+}
+
+Type ast_get_type(ASTNode *node) {
+  return node->type;
+}
