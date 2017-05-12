@@ -329,6 +329,10 @@ void c3_store_function(C3 *c3, char *name, ASTVec params, ASTNode* function) {
   c3_map_set (c3->funcnames, f->name, f);
 }
 
+void c3_unsupported(C3 *c3) {
+  debug_log (-1, "unsupported¥n");
+}
+
 int main(int argc, char **argv, char **envp) {
   int c;
   FILE* cnfp;

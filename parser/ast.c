@@ -24,6 +24,19 @@ ASTNode* ast_create_node(ASTKind kind, ASTVec children) {
   return node;
 }
 
+ASTNode* ast_create_node0(ASTKind kind) {
+  return ast_create_node (kind, NULL);
+}
+
+ASTNode* ast_create_node1(ASTKind kind, ASTNode* n) {
+  ASTVec vec = ast_vec_new();
+  if (!vec) {
+    return NULL;
+  }
+  ast_vec_add (vec, n);
+  return ast_create_node (kind, vec);
+}
+
 ASTNode* ast_create_node2(ASTKind kind, ASTNode* n1, ASTNode* n2) {
   ASTVec vec = ast_vec_new();
   if (!vec) {
@@ -31,6 +44,17 @@ ASTNode* ast_create_node2(ASTKind kind, ASTNode* n1, ASTNode* n2) {
   }
   ast_vec_add (vec, n1);
   ast_vec_add (vec, n2);
+  return ast_create_node (kind, vec);
+}
+
+ASTNode* ast_create_node3(ASTKind kind, ASTNode* n1, ASTNode* n2, ASTNode* n3) {
+  ASTVec vec = ast_vec_new();
+  if (!vec) {
+    return NULL;
+  }
+  ast_vec_add (vec, n1);
+  ast_vec_add (vec, n2);
+  ast_vec_add (vec, n3);  
   return ast_create_node (kind, vec);
 }
 

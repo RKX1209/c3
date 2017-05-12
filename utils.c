@@ -1,4 +1,5 @@
 /* C3 Theorem Prover - Apache v2.0 - Copyright 2017 - rkx1209 */
+#include <ctype.h>
 #include <unistd.h>
 #include <stdarg.h>
 #include <stdbool.h>
@@ -113,4 +114,12 @@ void _c3_print_cnf (C3List *cnf) {
 void c3_print_cnf (C3 *c3) {
   //printf ("size=%d, val=%d\n", c3->disjnum, c3->valnum);
   _c3_print_cnf (c3->cnf);
+}
+
+char *c3_str_tolower (char *str) {
+  while (str) {
+    *str = tolower (*str);
+    str++;
+  }
+  return str;
 }

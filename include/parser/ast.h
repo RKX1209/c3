@@ -22,7 +22,10 @@ typedef struct ast_node_t {
 }ASTNode;
 
 ASTNode* ast_create_node(ASTKind kind, ASTVec children);
+ASTNode* ast_create_node0(ASTKind kind);
+ASTNode* ast_create_node1(ASTKind kind, ASTNode n);
 ASTNode* ast_create_node2(ASTKind kind, ASTNode* n1, ASTNode* n2);
+ASTNode* ast_create_node3(ASTKind kind, ASTNode* n1, ASTNode* n2, ASTNode* n3);
 ASTNode* ast_dup_node(ASTNode* n);
 void ast_del_node(ASTNode *n);
 ASTVec   ast_vec_new();

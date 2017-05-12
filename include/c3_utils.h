@@ -8,5 +8,6 @@ void* c3_copy_value (const int32_t *a);
 FILE* c3_file_open (const char *file, const char *mode);
 char* c3_file_read (FILE *fp, long *len);
 void c3_print_cnf (C3 *c3);
+char *c3_str_tolower (char *str);
 
 #endif

@@ -2,6 +2,7 @@
   #include <stdio.h>
   #include <parser/ast.h>
   #include <parser/parser.h>
+  #include <c3_utils.h>
   /* C3 Theorem Prover - Apache v2.0 - Copyright 2017 - rkx1209 */
   extern char* yytext;
   extern int yylineno;
@@ -164,12 +165,12 @@ cmdi:
 |
     CHECK_SAT_ASSUMING_TOK LPAREN_TOK an_term RPAREN_TOK
     {
-
+      c3_unsupported (&c3);
     }
 |
     DECLARE_CONST_TOK LPAREN_TOK an_term RPAREN_TOK
     {
-
+      c3_unsupported (&c3);
     }
 |
     DECLARE_FUNCTION_TOK var_decl
@@ -185,6 +186,7 @@ cmdi:
     ECHO_TOK STRING_TOK
     {
       printf ("¥"%s¥"¥n", $2);
+      free ($2);
     }
 |
     EXIT_TOK
@@ -252,7 +254,9 @@ function_param:
 /* (arg (_ BitVec 8)) */
 LPAREN_TOK STRING_TOK LPAREN_TOK UNDERSCORE_TOK BITVEC_TOK NUMERAL_TOK RPAREN_TOK RPAREN_TOK
 {
-
+  ASTNode *ast_sym = c3_create_variable (0, $6, $2);
+  $$ = ast_sym;
+  c3_add_symbol ($2, ast_sym);
 };
 
 /* Returns a vector of parameters.*/
@@ -279,36 +283,59 @@ STRING_TOK LPAREN_TOK function_params RPAREN_TOK LPAREN_TOK UNDERSCORE_TOK BITVE
     sprintf(msg, "Different bit-widths specified: %d %d", $10->GetValueWidth(), $8);
     yyerror(msg);
   }
+  c3_store_function (&c3, $1, $3, $10);
+  free ($1);
+  free ($3);
+  free ($10);
 }
 | /* (func () (_ BitVec 8) <term>) */
 STRING_TOK LPAREN_TOK RPAREN_TOK LPAREN_TOK UNDERSCORE_TOK BITVEC_TOK NUMERAL_TOK RPAREN_TOK an_term
 {
-
+  if ($9->value_width != $7) {
+    char msg [100];
+    sprintf(msg, "Different bit-widths specified: %d %d", $9->value_width, $7);
+    yyerror(msg);
+  }
+  ASTVec empty;
+  c3_store_function (&c3, $1, empty, $9);
+  free ($1);
+  free ($9);
 }
 | /* (func (<params>) Bool <formula>) */
 STRING_TOK LPAREN_TOK function_params RPAREN_TOK BOOL_TOK an_formula
 {
+  c3_store_function (&c3, $1, $3, $6);
+  free ($1);
+  free ($3);
+  free ($10);
 }
 | /* (func () Bool <formula>) */
 STRING_TOK LPAREN_TOK RPAREN_TOK BOOL_TOK an_formula
 {
-
+  ASTVec empty;
+  c3_store_function (&c3, $1, empty, $5);
+  free ($1);
+  free ($5);
 }
 | /* (func (<params>) (Array (_ BitVec 8) (_ BitVec 8)) <term>) */
 STRING_TOK LPAREN_TOK function_params RPAREN_TOK LPAREN_TOK ARRAY_TOK LPAREN_TOK UNDERSCORE_TOK BITVEC_TOK NUMERAL_TOK RPAREN_TOK LPAREN_TOK UNDERSCORE_TOK BITVEC_TOK NUMERAL_TOK RPAREN_TOK RPAREN_TOK an_term
 {
-
+  c3_unsupported (&c3);
+  free ($1);
+  free ($18);
 }
 | /* (func () (Array (_ BitVec 8) (_ BitVec 8)) <term>) */
 STRING_TOK LPAREN_TOK RPAREN_TOK LPAREN_TOK ARRAY_TOK LPAREN_TOK UNDERSCORE_TOK BITVEC_TOK NUMERAL_TOK RPAREN_TOK LPAREN_TOK UNDERSCORE_TOK BITVEC_TOK NUMERAL_TOK RPAREN_TOK RPAREN_TOK an_term
 {
-
+  c3_unsupported (&c3);
+  free ($1);
+  free ($17);
 }
 ;
 
 status:
 STRING_TOK {
- $$ = NULL;
+
 }
 ;
 
@@ -329,108 +356,152 @@ var_decl:
 /* (func () (_ BitVec 8)) */
 STRING_TOK LPAREN_TOK RPAREN_TOK LPAREN_TOK UNDERSCORE_TOK BITVEC_TOK NUMERAL_TOK RPAREN_TOK
 {
-
+  ASTNode *ast_sym = c3_create_variable (0, $7, $1);
+  c3_add_symbol ($1, ast_sym);
 } /* (func () Bool) */
 | STRING_TOK LPAREN_TOK RPAREN_TOK BOOL_TOK
-{
-
+{  ASTNode *ast_sym = c3_create_variable (0, 0, $1);
+  c3_add_symbol ($1, ast_sym);
 } /* (func () (Array (_ BitVec 8) (_ BitVec 8))) */
 | STRING_TOK LPAREN_TOK RPAREN_TOK LPAREN_TOK ARRAY_TOK LPAREN_TOK UNDERSCORE_TOK BITVEC_TOK NUMERAL_TOK RPAREN_TOK LPAREN_TOK UNDERSCORE_TOK BITVEC_TOK NUMERAL_TOK RPAREN_TOK RPAREN_TOK
 {
+  ASTNode *ast_sym = c3_create_variable ($9, $14, $1);
+  int index_len = $9;
+  int value_len = $14;
+  if (index_len > 0) {
+    ast_sym->index_width = index_len;
+  } else {
+    debug_log (-1, "Fatal Error: parsing: BITVECTORS must be of positive length: \n");
+  }
 
+  if (value_len > 0) {
+    ast_sym->value_width = value_len;
+  } else {
+    debug_log (-1, "Fatal Error: parsing: BITVECTORS must be of positive length: \n");
+  }
+  c3_add_symbol ($1, ast_sym);
 }
 ;
 
 an_mixed:
 an_formula
 {
-
+  $$ = ast_vec_new ();
+  if ($1 != NULL) {
+    ast_vec_add ($$, $1);
+  }
 }
 |
 an_term
 {
-
+  $$ = ast_vec_new ();
+  if ($1 != NULL) {
+    ast_vec_add ($$, $1);
+  }
 }
 |
 an_mixed an_formula
 {
-
+  if ($1 != NULL && $2 != NULL) {
+    ast_vec_add ($1, $2);
+    $$ = $1;
+  }
 }
 |
 an_mixed an_term
 {
-
+  if ($1 != NULL && $2 != NULL) {
+    ast_vec_add ($1, $2);
+    $$ = $1;
+  }
 }
 ;
 
 an_formulas:
 an_formula
 {
-
+  $$ = ast_vec_new ();
+  if ($1 != NULL) {
+    ast_vec_add ($$, $1);
+  }
 }
 |
 an_formulas an_formula
 {
-
+  if ($1 != NULL && $2 != NULL) {
+    ast_vec_add ($1, $2);
+    $$ = $1;
+  }
 }
 ;
 
 an_formula:
 TRUE_TOK
 {
-
+  $$ = ast_create_node0 (TRUE);
 }
 | FALSE_TOK
 {
-
+  $$ = ast_create_node0 (FALSE);
 }
 | FORMID_TOK
 {
-
+  $$ = ast_dup_node ($1);
+  ast_del_node ($1);
 }
 | LPAREN_TOK EQ_TOK an_term an_term RPAREN_TOK
 {
-
+  ASTNode *n = ast_create_node2 (EQ, $3, $4);
+  $$ = n;
 }
 | LPAREN_TOK DISTINCT_TOK an_terms RPAREN_TOK
 {
-
+  $$ = NULL; //TODO
 }
 | LPAREN_TOK DISTINCT_TOK an_formulas RPAREN_TOK
 {
-
+  $$ = NULL; //TODO
 }
 | LPAREN_TOK BVSLT_TOK an_term an_term RPAREN_TOK
 {
-
+  ASTNode *n = ast_create_node2 (BVSLT, $3, $4);
+  $$ = n;
 }
 | LPAREN_TOK BVSLE_TOK an_term an_term RPAREN_TOK
 {
-
+  ASTNode *n = ast_create_node2 (BVSLE, $3, $4);
+  $$ = n;
 }
 | LPAREN_TOK BVSGT_TOK an_term an_term RPAREN_TOK
 {
-
+  ASTNode *n = ast_create_node2 (BVSGT, $3, $4);
+  $$ = n;
 }
 | LPAREN_TOK BVSGE_TOK an_term an_term RPAREN_TOK
 {
-
+  ASTNode *n = ast_create_node2 (BVSGE, $3, $4);
+  $$ = n;
 }
 | LPAREN_TOK BVLT_TOK an_term an_term RPAREN_TOK
 {
+  ASTNode *n = ast_create_node2 (BVLT, $3, $4);
+  $$ = n;
 
 }
 | LPAREN_TOK BVLE_TOK an_term an_term RPAREN_TOK
 {
-
+  ASTNode *n = ast_create_node2 (BVLE, $3, $4);
+  $$ = n;
 }
 | LPAREN_TOK BVGT_TOK an_term an_term RPAREN_TOK
 {
-
+  ASTNode *n = ast_create_node2 (BVGT, $3, $4);
+  $$ = n;
 }
 | LPAREN_TOK BVGE_TOK an_term an_term RPAREN_TOK
 {
-
+  ASTNode *n = ast_create_node2 (BVGE, $3, $4);
+  $$ = n;
 }
 | LPAREN_TOK an_formula RPAREN_TOK
 {
@@ -438,43 +509,50 @@ TRUE_TOK
 }
 | LPAREN_TOK NOT_TOK an_formula RPAREN_TOK
 {
-
+  ASTNode *n = ast_create_node1 (NOT, $3);
+  $$ = n;
 }
 | LPAREN_TOK IMPLIES_TOK an_formula an_formula RPAREN_TOK
 {
-
+  ASTNode *n = ast_create_node2 (IMPLIES, $3, $4);
+  $$ = n;
 }
 | LPAREN_TOK ITE_TOK an_formula an_formula an_formula RPAREN_TOK
 {
-
+  ASTNode *n = ast_create_node3 (ITE, $3, $4, $5);
+  $$ = n;
 }
 | LPAREN_TOK AND_TOK an_formulas RPAREN_TOK
 {
-
+  ASTNode *n = ast_create_node (AND, $3);
+  $$ = n;
 }
 | LPAREN_TOK OR_TOK an_formulas RPAREN_TOK
 {
-
+  ASTNode *n = ast_create_node (OR, $3);
+  $$ = n;
 }
 | LPAREN_TOK XOR_TOK an_formula an_formula RPAREN_TOK
 {
-
+  ASTNode *n = ast_create_node2 (XOR, $3, $4);
+  $$ = n;
 }
 | LPAREN_TOK EQ_TOK an_formula an_formula RPAREN_TOK
 {
-
+  ASTNode *n = ast_create_node2 (IFF, $3, $4);
+  $$ = n;
 }
 | LPAREN_TOK BOOLEAN_FUNCTIONID_TOK an_mixed RPAREN_TOK
 {
-
+  $$ = NULL; //TODO
 }
 | BOOLEAN_FUNCTIONID_TOK an_mixed RPAREN_TOK
 {
-
+  $$ = NULL; //TODO
 }
 | BOOLEAN_FUNCTIONID_TOK
 {
-
+  $$ = NULL; //TODO
 }
 ;
 
@@ -490,7 +568,7 @@ an_term
 an_terms an_term
 {
   if ($1 != NULL && $2 != NULL) {
-    add_vec_add ($$, $2);
+    ast_vec_add ($$, $2);
     $$ = $1;
   }
 }
