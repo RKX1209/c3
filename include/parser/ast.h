@@ -12,6 +12,11 @@ typedef enum {
   BITVECTOR_TYPE,
 } Type;
 
+typedef struct ast_bvconst_t {
+  unsigned int *bits;
+  size_t size;
+}ASTBVConst;
+
 typedef struct ast_node_t {
   ASTKind kind;
   ASTVec children;
@@ -32,4 +37,6 @@ ASTVec   ast_vec_new();
 ASTNode* ast_vec_add(ASTVec vec, ASTNode* node);
 size_t   ast_vec_size(ASTVec vec);
 Type     ast_get_type(ASTNode *node);
+ASTBVConst* ast_bvc_create (unsigned int bits);
+unsigned int ast_bvc_size (unsigned int bits);
 #endif

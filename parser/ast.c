@@ -2,6 +2,9 @@
 #include <stdlib.h>
 #include <parser/ast.h>
 
+static const unsigned BYTE = 8;
+static const unsigned BYTE_MASK = (1 << BYTE) - 1;
+
 ASTVec ast_vec_new() {
   return c3_list_new ();
 }
@@ -54,7 +57,7 @@ ASTNode* ast_create_node3(ASTKind kind, ASTNode* n1, ASTNode* n2, ASTNode* n3) {
   }
   ast_vec_add (vec, n1);
   ast_vec_add (vec, n2);
-  ast_vec_add (vec, n3);  
+  ast_vec_add (vec, n3);
   return ast_create_node (kind, vec);
 }
 
@@ -72,4 +75,27 @@ size_t ast_vec_size(ASTVec vec) {
 
 Type ast_get_type(ASTNode *node) {
   return node->type;
+}
+
+ASTBVConst* ast_bvc_create (unsigned int bits) {
+  ASTBVConst *bvconst = (ASTBVConst *)malloc (sizeof (ASTBVConst));
+  size_t size;
+  unsigned int *bits;
+
+  if (!bvconst) {
+    return NULL;
+  }
+  size = ast_bvc_size (bits);
+  bits = (unsigned int *) malloc (size);
+  bvconst->bits = bits;
+  bvconst->size = size;
+}
+
+unsigned int ast_bvc_size (unsigned int bits) {
+  unsigned int size = 0;
+  while (bits > 0) {
+    if (bits) size++;
+    bits >>= 8;
+  }
+  return size;
 }

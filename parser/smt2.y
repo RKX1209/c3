@@ -577,7 +577,7 @@ an_terms an_term
 an_term:
 TERMID_TOK
 {
-  $$ = $1;
+  $$ = ast_dup_node ($1);
 }
 | LPAREN_TOK an_term RPAREN_TOK
 {
@@ -585,20 +585,23 @@ TERMID_TOK
 }
 | SELECT_TOK an_term an_term
 {
-
+  //ARRAY READ TODO
+  $$ = NULL;
 }
 | STORE_TOK an_term an_term an_term
 {
-
+  //ARRAY WIRTE TODO
+  $$ = NULL;
 }
 | LPAREN_TOK UNDERSCORE_TOK BVEXTRACT_TOK  NUMERAL_TOK  NUMERAL_TOK RPAREN_TOK an_term
 {
-
+  //extract TODO
+  $$ = NULL;
 }
-| LPAREN_TOK UNDERSCORE_TOK BVZX_TOK  NUMERAL_TOK  RPAREN_TOK an_term
+| LPAREN_TOK UNDERSCORE_TOK BVZX_TOK NUMERAL_TOK RPAREN_TOK an_term
 {
 }
-| LPAREN_TOK UNDERSCORE_TOK BVSX_TOK  NUMERAL_TOK  RPAREN_TOK an_term
+| LPAREN_TOK UNDERSCORE_TOK BVSX_TOK NUMERAL_TOK RPAREN_TOK an_term
 {
 }
 | ITE_TOK an_formula an_term an_term

@@ -8,7 +8,7 @@
 #include <c3_ordered_map.h>
 #include <parser/ast.h>
 
-#define C3_UNSAT    0   //unatisfiable
+#define C3_UNSAT    0   //unsatisfiable
 #define C3_SAT      1   //satisfiable
 #define C3_INVALID  2   //error
 #define C3_SIMPLIFY 3   //can still simplify
