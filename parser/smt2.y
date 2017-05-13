@@ -1,7 +1,9 @@
 %{
+  #include <stdint.h>
   #include <stdio.h>
   #include <parser/ast.h>
   #include <parser/parser.h>
+  #include <c3_core.h>
   #include <c3_utils.h>
   /* C3 Theorem Prover - Apache v2.0 - Copyright 2017 - rkx1209 */
   extern char* yytext;
@@ -307,7 +309,7 @@ STRING_TOK LPAREN_TOK function_params RPAREN_TOK BOOL_TOK an_formula
   c3_store_function (&c3, $1, $3, $6);
   free ($1);
   free ($3);
-  free ($10);
+  free ($6);
 }
 | /* (func () Bool <formula>) */
 STRING_TOK LPAREN_TOK RPAREN_TOK BOOL_TOK an_formula
@@ -600,134 +602,207 @@ TERMID_TOK
 }
 | LPAREN_TOK UNDERSCORE_TOK BVZX_TOK NUMERAL_TOK RPAREN_TOK an_term
 {
+  //zero expand TODO
+  $$ = NULL;
 }
 | LPAREN_TOK UNDERSCORE_TOK BVSX_TOK NUMERAL_TOK RPAREN_TOK an_term
 {
+  //signed expand TODO
+  $$ = NULL;
 }
 | ITE_TOK an_formula an_term an_term
 {
-
+  //ITE TODO
+  $$ = NULL;
 }
 | BVCONCAT_TOK an_term an_term
 {
+  const unsigned int width = $2->value_width + $3->value_width;
+  ASTNode *n = ast_create_node2w (BVCONCAT, width, $2, $3);
+  $$ = n;
 }
 | BVNOT_TOK an_term
 {
+  const unsigned int width = $2->value_width;
+  ASTNode *n = ast_create_node2w (BVNOT, width, $2);
+  $$ = n;
 }
 | BVNEG_TOK an_term
 {
+  const unsigned int width = $2->value_width;
+  ASTNode *n = ast_create_node2w (BVUMINUS, width, $2);
+  $$ = n;
 }
 | BVAND_TOK an_term an_term
 {
-
+  const unsigned int width = $2->value_width;
+  ASTNode *n = ast_create_node2w (BVAND, width, $2, $3);
+  $$ = n;
 }
 | BVOR_TOK an_term an_term
 {
-
+  const unsigned int width = $2->value_width;
+  ASTNode *n = ast_create_node2w (BVOR, width, $2, $3);
+  $$ = n;
 }
 | BVXOR_TOK an_term an_term
 {
-
+  const unsigned int width = $2->value_width;
+  ASTNode *n = ast_create_node2w (BVXOR, width, $2, $3);
+  $$ = n;
 }
 | BVXNOR_TOK an_term an_term
 {
-
+  // (bvxnor s t) abbreviates (bvor (bvand s t) (bvand (bvnot s) (bvnot t)))
+  const unsigned int width = $2->value_width;
+  ASTNode *n = ast_create_node2w (BVOR, width,
+                ast_create_node2w (BVAND, width, $2, $3),
+                ast_create_node2w (BVAND, width,
+                  ast_create_node1w (BVNOT, width, $2),
+                  ast_create_node1w (BVNOT, width, $3)
+                )
+               );
+  $$ = n;
 }
 | BVCOMP_TOK an_term an_term
 {
-
+  //compare TODO
+  $$ = NULL;
 }
 | BVSUB_TOK an_term an_term
 {
-
+  const unsigned int width = $2->value_width;
+  ASTNode *n = ast_create_node2w (BVSUB, width, $2, $3);
+  $$ = n;
 }
 | BVPLUS_TOK an_term an_term
 {
-
+  const unsigned int width = $2->value_width;
+  ASTNode *n = ast_create_node2w (BVPLUS, width, $2, $3);
+  $$ = n;
 }
 | BVMULT_TOK an_term an_term
 {
-
+  const unsigned int width = $2->value_width;
+  ASTNode *n = ast_create_node2w (BVMULT, width, $2, $3);
+  $$ = n;
 }
 | BVDIV_TOK an_term an_term
 {
-
+  const unsigned int width = $2->value_width;
+  ASTNode *n = ast_create_node2w (BVDIV, width, $2, $3);
+  $$ = n;
 }
 | BVMOD_TOK an_term an_term
 {
-
+  const unsigned int width = $2->value_width;
+  ASTNode *n = ast_create_node2w (BVMOD, width, $2, $3);
+  $$ = n;
 }
 | SBVDIV_TOK an_term an_term
 {
-
+  const unsigned int width = $2->value_width;
+  ASTNode *n = ast_create_node2w (SBVDIV, width, $2, $3);
+  $$ = n;
 }
 | SBVREM_TOK an_term an_term
 {
-
+  const unsigned int width = $2->value_width;
+  ASTNode *n = ast_create_node2w (SBVREM, width, $2, $3);
+  $$ = n;
 }
 | SBVMOD_TOK an_term an_term
 {
-
+  const unsigned int width = $2->value_width;
+  ASTNode *n = ast_create_node2w (SBVMOD, width, $2, $3);
+  $$ = n;
 }
 | BVNAND_TOK an_term an_term
 {
-
+  const unsigned int width = $2->value_width;
+  ASTNode *n = ast_create_node1w (BVNOT, width, ast_create_node2w (BVAND, width, $2, $3));
+  $$ = n;
 }
 | BVNOR_TOK an_term an_term
 {
-
+  const unsigned int width = $2->value_width;
+  ASTNode *n = ast_create_node1w (BVNOT, width, ast_create_node2w (BVOR, width, $2, $3));
+  $$ = n;
 }
 | BVLEFTSHIFT_1_TOK an_term an_term
 {
-
+  const unsigned int width = $2->value_width;
+  ASTNode *n = ast_create_node2w (BVLEFTSHIFT, width, $2, $3);
+  $$ = n;
 }
 | BVRIGHTSHIFT_1_TOK an_term an_term
 {
-
+  // logic right shift
+  const unsigned int width = $2->value_width;
+  ASTNode *n = ast_create_node2w (BVRIGHTSHIFT, width, $2, $3);
+  $$ = n;
 }
 | BVARITHRIGHTSHIFT_TOK an_term an_term
 {
-
+  // arithmetic right shift
+  const unsigned int width = $2->value_width;
+  ASTNode *n = ast_create_node2w (BVSRSHIFT, width, $2, $3);
+  $$ = n;
 }
 | LPAREN_TOK UNDERSCORE_TOK BVROTATE_LEFT_TOK  NUMERAL_TOK  RPAREN_TOK an_term
 {
-
+  //rotate left TODO
+  $$ = NULL;
 }
 | LPAREN_TOK UNDERSCORE_TOK BVROTATE_RIGHT_TOK  NUMERAL_TOK  RPAREN_TOK an_term
 {
-
+  //rotate right TODO
+  $$ = NULL;
 }
 | LPAREN_TOK UNDERSCORE_TOK BVREPEAT_TOK  NUMERAL_TOK RPAREN_TOK an_term
 {
-
+  //repeat TODO
+  $$ = NULL;
 }
 | UNDERSCORE_TOK BVCONST_DECIMAL_TOK NUMERAL_TOK
 {
-
+  unsigned long decimal = strtoul ($2, NULL, 10);
+  ASTNode *n = ast_create_bvc(*$3, decimal);
+  $$ = n;
 }
 | BVCONST_HEXIDECIMAL_TOK
 {
-
+  unsigned long hex = strtoul ($1, NULL, 16);
+  size_t width = strlen($1) * 4;
+  ASTNode *n = ast_create_bvc(width, hex);
+  $$ = n;
 }
 | BVCONST_BINARY_TOK
 {
-
+  unsigned long binary = strtoul ($1, NULL, 2);
+  size_t width = strlen($1);
+  ASTNode *n = ast_create_bvc(width, binary);
+  $$ = n;
 }
 | LPAREN_TOK BITVECTOR_FUNCTIONID_TOK an_mixed RPAREN_TOK
 {
-
+  //apply function TODO
+  $$ = NULL;
 }
 | BITVECTOR_FUNCTIONID_TOK
 {
-
+  //apply function TODO
+  $$ = NULL;
 }
 | LPAREN_TOK EXCLAIMATION_MARK_TOK an_term NAMED_ATTRIBUTE_TOK STRING_TOK RPAREN_TOK
 {
-
+  //attribute TODO
+  $$ = NULL;
 }
 | LPAREN_TOK LET_TOK LPAREN_TOK
 {
-
+  //let TODO
+  $$ = NULL;
 }
 ;
 %%

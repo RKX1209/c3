@@ -2,6 +2,8 @@
   /* C3 Theorem Prover - Apache v2.0 - Copyright 2017 - rkx1209 */
   #include <stdbool.h>
   #include <stdlib.h>
+  #include <stdio.h>
+  #include <string.h>
   #include <c3_core.h>
   #include "parsesmt2.h"
 

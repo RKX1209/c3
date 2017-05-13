@@ -123,3 +123,13 @@ char *c3_str_tolower (char *str) {
   }
   return str;
 }
+
+void c3_fatal_error (const char *format, ...) {
+  char prefix[] = "Fatal Error: ";
+  char *err_format = strcat (prefix, format);
+  va_list ap;
+  va_start (ap, format);
+  debug_log (-1, err_format, ap);
+  va_end (ap);
+  abort ();
+}
