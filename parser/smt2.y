@@ -806,3 +806,7 @@ TERMID_TOK
 }
 ;
 %%
+
+int c3_smt2_parse() {
+  return yyparse();
+}

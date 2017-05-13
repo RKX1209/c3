@@ -5,20 +5,37 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <getopt.h>
 #include <c3_core.h>
 #include <c3_utils.h>
 #include <parser/parsecnf.h>
+
+typedef enum {
+  SMTLIB2,
+  DIMACS,
+}Format;
 
 char *status_str[] = {"UNSATISFIABLE", "SATISFIABLE", "ERROR" };
 C3 c3;
 
 static int help() {
-  printf ("Usage: c3 <cnf-file>\n");
+  const char *msg = \
+  "Usage: c3 [options] <input-file>\n"
+  " where input is SMTLIB2 or DIMACS\n"
+  "\n"
+  " -h [ --help]\t\tprint this help\n"
+  " -v [ --version]\tprint version number\n"
+  "\n"
+  "Input options:\n"
+  " -S [--SMTLIB2]\t\tuse the SMT-LIB2 format\n"
+  " -D [--DIMACS]\t\tuse the SMT-LIB2 format\n"
+  "\n";
+  printf (msg);
   return 0;
 }
 
 static int version() {
-  printf ("c3 1.0.0 \n");
+  printf ("C3 version 1.0.0 \n");
   return 0;
 }
 
@@ -340,11 +357,19 @@ int main(int argc, char **argv, char **envp) {
   int32_t *res;
   C3_STATUS status;
   bool correct = true;
+  Format file_format;
+  struct option longopts[] = {
+    { "help", no_argument, NULL, 'h'},
+    { "version", no_argument, NULL, 'v'},
+    { "DIMACS", required_argument, NULL, 'D'},
+    { "SMTLIB2", required_argument, NULL, 'S'},
+    {0, 0, 0, 0},
+  };
 
   if (argc < 2) {
     return help ();
   }
-  while ((c = getopt (argc, argv, "hv")) != -1) {
+  while ((c = getopt_long (argc, argv, "hvD:S:", longopts, NULL)) != -1) {
     switch (c) {
       case 'h':
         help ();
@@ -352,11 +377,23 @@ int main(int argc, char **argv, char **envp) {
       case 'v':
         version ();
         break;
+      case 'D': // SAT format file (DIMACS)
+        file_format = DIMACS;
+        cnf_path = strdup (optarg);
+        break;
+      case 'S': // STP format file (SMTLIB2)
+        file_format = SMTLIB2;
+        cnf_path = strdup (optarg);
+        break;
       default:
         break;
     }
   }
-  cnf_path = argv[optind] ? strdup (argv[optind]) : NULL;
+  if (!cnf_path) {
+    /* default format */
+    file_format = SMTLIB2;
+    cnf_path = argv[optind] ? strdup (argv[optind]) : NULL;
+  }
   cnfp = c3_file_open (cnf_path, "r");
   if (!cnfp) {
     return 0;
@@ -371,29 +408,35 @@ int main(int argc, char **argv, char **envp) {
     fclose (cnfp);
     return 0;
   }
-  if (!c3_parse_cnffile (&c3, cnf)) {
-    fclose (cnfp);
-    free (cnf);
-    return 0;
-  }
-  c3_print_cnf (&c3);
-  c3_sort_cnf (&c3);
-  res = (int8_t*) calloc (c3.valnum, sizeof(int32_t));
-  status = c3_derive_sat (&c3, res);
-  //c3_print_cnf (&c3);
-  debug_log (-1, "s %s\n", status_str[status]);
-  if (status == C3_SAT) {
-    /* print result */
-    debug_log (-1, "v ");
-    int i;
-    for (i = 0; i < c3.valnum; i++) {
-        if (res[i] >= 0) debug_log (-1, "%d ", i + 1);
-        else debug_log (-1, "%d ", -(i + 1));
+  if (file_format == DIMACS) {
+    /* SAT mode */
+    if (!c3_parse_cnffile (&c3, cnf)) {
+      fclose (cnfp);
+      free (cnf);
+      return 0;
     }
-    debug_log (-1, "0\n");
-    correct = c3_verify_sat (&c3, res);
+    c3_print_cnf (&c3);
+    c3_sort_cnf (&c3);
+    res = (int8_t*) calloc (c3.valnum, sizeof(int32_t));
+    status = c3_derive_sat (&c3, res);
+    //c3_print_cnf (&c3);
+    debug_log (-1, "s %s\n", status_str[status]);
+    if (status == C3_SAT) {
+      /* print result */
+      debug_log (-1, "v ");
+      int i;
+      for (i = 0; i < c3.valnum; i++) {
+          if (res[i] >= 0) debug_log (-1, "%d ", i + 1);
+          else debug_log (-1, "%d ", -(i + 1));
+      }
+      debug_log (-1, "0\n");
+      correct = c3_verify_sat (&c3, res);
+    }
+    printf ("Verifying.... [%s]\n", (correct ? "SUCCESS":"FAIL"));
+  } else {
+    /* SMT mode */
+
   }
-  printf ("Verifying.... [%s]\n", (correct ? "SUCCESS":"FAIL"));
   /* Finish */
   fclose (cnfp);
   free (res);

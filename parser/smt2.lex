@@ -178,7 +178,3 @@ bv{DIGIT}+    { yylval.str = strdup(yytext + 2); return BVCONST_DECIMAL_TOK; }
 ({LETTER}|{OPCHAR})({ANYTHING})* { return lookup (yytext); }
 . { yyerror("Illegal input character."); }
 %%
-
-int c3_smt2_parse() {
-  return yyparse();
-}

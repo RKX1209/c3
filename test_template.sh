@@ -48,9 +48,9 @@ run_test() {
   $TEST_NAME / $NAME
 __EOF__
   printf "%s\n" "${EXPECT}" > ${TMP_EXP}
-  C3ARGS="${FILE} > ${TMP_OUT} 2> ${TMP_ERR}"
+  C3ARGS="-D ${FILE} > ${TMP_OUT} 2> ${TMP_ERR}"
   C3CMD="${C3} ${C3ARGS}"
-  echo "test: ${C3CMD}"
+  echo "${C3CMD}"
   eval "${C3CMD}"
   CODE=$?
   TESTS_TOTAL=$(( TESTS_TOTAL + 1 ))
