@@ -28,6 +28,8 @@ ASTNode* ast_create_node(ASTKind kind, ASTVec children) {
   }
   node->kind = kind;
   node->children = children;
+  node->index_width = -1;
+  node->value_width = 0;
   return node;
 }
 
@@ -88,7 +90,11 @@ void ast_del_node(ASTNode *n) {
 }
 
 ASTNode* ast_dup_node(ASTNode* n) {
-  return ast_create_node (n->kind, n->children);
+  ASTNode *new = ast_create_node (n->kind, n->children);
+  new->value_width = n->value_width;
+  new->index_width = n->index_width;
+  new->name = n->name;
+  new->bvconst = n->bvconst;
 }
 
 size_t ast_vec_size(ASTVec vec) {
@@ -96,7 +102,16 @@ size_t ast_vec_size(ASTVec vec) {
 }
 
 Type ast_get_type(ASTNode *node) {
-  return node->type;
+  if (node->index_width == 0 && node->value_width == 0) {
+    return BOOLEAN_TYPE;
+  }
+  if (node->index_width == 0 && node->value_width > 0) {
+    return BITVECTOR_TYPE;
+  }
+  if (node->index_width > 0 && node->value_width > 0) {
+    return ARRAY_TYPE;
+  }
+  return UNKNOWN_TYPE;
 }
 
 ASTNode* ast_create_bvc(unsigned int width, unsigned long long bvconst) {
