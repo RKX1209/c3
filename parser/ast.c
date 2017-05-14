@@ -115,8 +115,8 @@ Type ast_get_type(ASTNode *node) {
 }
 
 ASTNode* ast_create_bvc(unsigned int width, unsigned long long bvconst) {
-  if (width <= 0 || width > (sizeof (unsigned long long))) {
-    c3_fatal_error ("CreateBVConst: trying to create bvconst of width");
+  if (width <= 0 || width > (sizeof (unsigned long long) * 8)) {
+    c3_fatal_error ("CreateBVConst: trying to create bvconst of width %d", width);
   }
   ASTNode *node;
   ASTBVConst *astconst;
