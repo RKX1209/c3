@@ -8,6 +8,8 @@
   #include "parsesmt2.h"
 
   extern char *yytext;
+  char *string_lit = NULL;
+
   static int lookup(char *s) {
     char * cleaned = NULL;
     size_t len;
@@ -43,6 +45,8 @@
 
 /* start states */
 %x  COMMENT
+%x  STRING_LITERAL
+%x  SYMBOL
 
 LETTER    ([a-zA-Z])
 DIGIT     ([0-9])
@@ -60,8 +64,38 @@ bv{DIGIT}+    { yylval.str = strdup(yytext + 2); return BVCONST_DECIMAL_TOK; }
 {DIGIT}+"."{DIGIT}+   { return DECIMAL_TOK; }
 
 ";"		{ BEGIN COMMENT; }
-<COMMENT>"\n"	{ /* return to normal mode */}
+<COMMENT>"\n"	{ BEGIN INITIAL; /* return to normal mode */}
 <COMMENT>.	{ /* stay in comment mode */ }
+
+<INITIAL>"\""		{ BEGIN STRING_LITERAL;
+                  if (string_lit) {
+                    free (string_lit);
+                  }
+                  string_lit = malloc (1);
+                  string_lit[0] = '\0';
+                                      }
+<STRING_LITERAL>"\"\""	{ /* double quote is the only escape. */
+                          if (!realloc (string_lit, strlen (string_lit) + 2)) {
+                            c3_fatal_error ("string expansion failed\n");
+                          }
+                          string_lit[strlen (string_lit) - 2] = '"';
+                          string_lit[strlen (string_lit) - 1] = '\0'; }
+<STRING_LITERAL>"\""	{ BEGIN INITIAL;
+			                  yylval.str = strdup (string_lit);
+                        return STRING_TOK; }
+<STRING_LITERAL>.	{
+                    if (!realloc (string_lit, strlen (string_lit) + 1)) {
+                      c3_fatal_error ("string expansion failed\n");
+                    }
+                    string_lit[strlen (string_lit) - 2] = *yytext;
+                    string_lit[strlen (string_lit) - 1] = '\0';   }
+<STRING_LITERAL>"\n" {
+                    if (!realloc (string_lit, strlen (string_lit) + 1)) {
+                      c3_fatal_error ("string expansion failed\n");
+                    }
+                    string_lit[strlen (string_lit) - 2] = *yytext;
+                    string_lit[strlen (string_lit) - 1] = '\0';   }
+
   /* Valid character are: ~ ! @ # $ % ^ & * _ - + = | \ : ; " < > . ? / ( ) */
 "("             { return LPAREN_TOK; }
 ")"             { return RPAREN_TOK; }

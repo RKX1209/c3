@@ -9,6 +9,7 @@
 #include <c3_core.h>
 #include <c3_utils.h>
 #include <parser/parsecnf.h>
+#include <parser/parser.h>
 
 typedef enum {
   SMTLIB2,
@@ -403,13 +404,14 @@ int main(int argc, char **argv, char **envp) {
   /* Init */
   c3_init (&c3);
 
-  cnf = c3_file_read (cnfp, NULL);
-  if (!cnf) {
-    fclose (cnfp);
-    return 0;
-  }
   if (file_format == DIMACS) {
     /* SAT mode */
+    cnf = c3_file_read (cnfp, NULL);
+    if (!cnf) {
+      fclose (cnfp);
+      return 0;
+    }
+
     if (!c3_parse_cnffile (&c3, cnf)) {
       fclose (cnfp);
       free (cnf);
@@ -435,7 +437,7 @@ int main(int argc, char **argv, char **envp) {
     printf ("Verifying.... [%s]\n", (correct ? "SUCCESS":"FAIL"));
   } else {
     /* SMT mode */
-
+    c3_smt2_parse (cnfp);
   }
   /* Finish */
   fclose (cnfp);

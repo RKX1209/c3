@@ -1,11 +1,13 @@
 %{
   #include <stdint.h>
   #include <stdio.h>
+  #include <string.h>
   #include <parser/ast.h>
   #include <parser/parser.h>
   #include <c3_core.h>
   #include <c3_utils.h>
   /* C3 Theorem Prover - Apache v2.0 - Copyright 2017 - rkx1209 */
+  extern FILE* yyin;
   extern char* yytext;
   extern int yylineno;
 
@@ -26,6 +28,7 @@
 
 %type <node> status
 %type <vec> an_formulas an_terms function_params an_mixed
+
 %type <node> an_term  an_formula function_param
 
 %token <uintval> NUMERAL_TOK
@@ -156,7 +159,7 @@ commands: commands LPAREN_TOK cmdi RPAREN_TOK
 ;
 
 cmdi:
-    ASSERT_TOK an_formula:
+    ASSERT_TOK an_formula
     {
     }
 |
@@ -187,7 +190,7 @@ cmdi:
 |
     ECHO_TOK STRING_TOK
     {
-      printf ("¥"%s¥"¥n", $2);
+      printf ("\"%s\"\n", $2);
       free ($2);
     }
 |
@@ -237,7 +240,9 @@ cmdi:
 |
     LOGIC_TOK STRING_TOK
     {
-
+      if (!(strcmp ($2,"QF_BV") == 0 || strcmp ($2,"QF_ABV") == 0 || strcmp ($2,"QF_AUFBV") == 0)) {
+        yyerror ("Wrong input logic");
+      }
     }
 |
     NOTES_TOK attribute STRING_TOK
@@ -258,7 +263,7 @@ LPAREN_TOK STRING_TOK LPAREN_TOK UNDERSCORE_TOK BITVEC_TOK NUMERAL_TOK RPAREN_TO
 {
   ASTNode *ast_sym = c3_create_variable (0, $6, $2);
   $$ = ast_sym;
-  c3_add_symbol ($2, ast_sym);
+  c3_add_symbol (&c3, $2, ast_sym);
 };
 
 /* Returns a vector of parameters.*/
@@ -282,7 +287,7 @@ STRING_TOK LPAREN_TOK function_params RPAREN_TOK LPAREN_TOK UNDERSCORE_TOK BITVE
 {
   if ($10->value_width != $8) {
     char msg[128];
-    sprintf(msg, "Different bit-widths specified: %d %d", $10->GetValueWidth(), $8);
+    sprintf(msg, "Different bit-widths specified: %d %d", $10->value_width, $8);
     yyerror(msg);
   }
   c3_store_function (&c3, $1, $3, $10);
@@ -359,11 +364,11 @@ var_decl:
 STRING_TOK LPAREN_TOK RPAREN_TOK LPAREN_TOK UNDERSCORE_TOK BITVEC_TOK NUMERAL_TOK RPAREN_TOK
 {
   ASTNode *ast_sym = c3_create_variable (0, $7, $1);
-  c3_add_symbol ($1, ast_sym);
+  c3_add_symbol (&c3, $1, ast_sym);
 } /* (func () Bool) */
 | STRING_TOK LPAREN_TOK RPAREN_TOK BOOL_TOK
 {  ASTNode *ast_sym = c3_create_variable (0, 0, $1);
-  c3_add_symbol ($1, ast_sym);
+  c3_add_symbol (&c3, $1, ast_sym);
 } /* (func () (Array (_ BitVec 8) (_ BitVec 8))) */
 | STRING_TOK LPAREN_TOK RPAREN_TOK LPAREN_TOK ARRAY_TOK LPAREN_TOK UNDERSCORE_TOK BITVEC_TOK NUMERAL_TOK RPAREN_TOK LPAREN_TOK UNDERSCORE_TOK BITVEC_TOK NUMERAL_TOK RPAREN_TOK RPAREN_TOK
 {
@@ -381,7 +386,7 @@ STRING_TOK LPAREN_TOK RPAREN_TOK LPAREN_TOK UNDERSCORE_TOK BITVEC_TOK NUMERAL_TO
   } else {
     debug_log (-1, "Fatal Error: parsing: BITVECTORS must be of positive length: \n");
   }
-  c3_add_symbol ($1, ast_sym);
+  c3_add_symbol (&c3, $1, ast_sym);
 }
 ;
 
@@ -624,13 +629,13 @@ TERMID_TOK
 | BVNOT_TOK an_term
 {
   const unsigned int width = $2->value_width;
-  ASTNode *n = ast_create_node2w (BVNOT, width, $2);
+  ASTNode *n = ast_create_node1w (BVNOT, width, $2);
   $$ = n;
 }
 | BVNEG_TOK an_term
 {
   const unsigned int width = $2->value_width;
-  ASTNode *n = ast_create_node2w (BVUMINUS, width, $2);
+  ASTNode *n = ast_create_node1w (BVUMINUS, width, $2);
   $$ = n;
 }
 | BVAND_TOK an_term an_term
@@ -767,7 +772,7 @@ TERMID_TOK
 | UNDERSCORE_TOK BVCONST_DECIMAL_TOK NUMERAL_TOK
 {
   unsigned long decimal = strtoul ($2, NULL, 10);
-  ASTNode *n = ast_create_bvc(*$3, decimal);
+  ASTNode *n = ast_create_bvc($3, decimal);
   $$ = n;
 }
 | BVCONST_HEXIDECIMAL_TOK
@@ -807,6 +812,7 @@ TERMID_TOK
 ;
 %%
 
-int c3_smt2_parse() {
+int c3_smt2_parse(FILE *fp) {
+  yyin = fp;
   return yyparse();
 }
