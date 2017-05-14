@@ -77,26 +77,29 @@ bv{DIGIT}+    { yylval.str = strdup(yytext + 2); return BVCONST_DECIMAL_TOK; }
                   string_lit[0] = '\0';
                                       }
 <STRING_LITERAL>"\"\""	{ /* double quote is the only escape. */
-                          if (!realloc (string_lit, strlen (string_lit) + 2)) {
+                          size_t old = strlen (string_lit);
+                          if (!realloc (string_lit, old + 2)) {
                             c3_fatal_error ("string expansion failed\n");
                           }
-                          string_lit[strlen (string_lit) - 2] = '"';
-                          string_lit[strlen (string_lit) - 1] = '\0'; }
+                          string_lit[old] = '"';
+                          string_lit[old + 1] = '\0'; }
 <STRING_LITERAL>"\""	{ BEGIN INITIAL;
 			                  yylval.str = strdup (string_lit);
                         return STRING_TOK; }
 <STRING_LITERAL>.	{
-                    if (!realloc (string_lit, strlen (string_lit) + 1)) {
+                    size_t old = strlen (string_lit);
+                    if (!realloc (string_lit, old + 2)) {
                       c3_fatal_error ("string expansion failed\n");
                     }
-                    string_lit[strlen (string_lit) - 2] = *yytext;
-                    string_lit[strlen (string_lit) - 1] = '\0';   }
+                    string_lit[old] = *yytext;
+                    string_lit[old + 1] = '\0'; }
 <STRING_LITERAL>"\n" {
-                    if (!realloc (string_lit, strlen (string_lit) + 1)) {
+                    size_t old = strlen (string_lit);
+                    if (!realloc (string_lit, old + 2)) {
                       c3_fatal_error ("string expansion failed\n");
                     }
-                    string_lit[strlen (string_lit) - 2] = *yytext;
-                    string_lit[strlen (string_lit) - 1] = '\0';   }
+                    string_lit[old] = *yytext;
+                    string_lit[old + 1] = '\0'; }
 
   /* Valid character are: ~ ! @ # $ % ^ & * _ - + = | \ : ; " < > . ? / ( ) */
 "("             { return LPAREN_TOK; }
