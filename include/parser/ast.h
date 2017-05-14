@@ -7,6 +7,7 @@
 typedef C3List* ASTVec;
 
 typedef enum {
+  UNKNOWN_TYPE,
   BOOLEAN_TYPE,
   ARRAY_TYPE,
   BITVECTOR_TYPE,
@@ -20,7 +21,6 @@ typedef struct ast_bvconst_t {
 typedef struct ast_node_t {
   ASTKind kind;
   ASTVec children;
-  Type type;
   unsigned int value_width; //'bits' size of value
   unsigned int index_width;
   char *name;

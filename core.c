@@ -259,6 +259,7 @@ C3_STATUS c3_derive_sat(C3 *c3, int32_t *res) {
 
 void c3_init (C3 *c3) {
   c3->cnf = c3_list_new ();
+  c3->asserts = c3_list_new ();
   c3->literals = c3_hmap_new (100); //TODO: implment rehash function
   c3->literals2 = c3_bstree_new ();
   c3->symbols = c3_map_new ();
@@ -268,6 +269,7 @@ void c3_init (C3 *c3) {
 
 void c3_fini (C3 *c3) {
   c3_del_cnf (c3->cnf);
+  c3_list_free (c3->asserts);
   c3_hmap_free (c3->literals);
   c3_bstree_free (c3->literals2);
   c3_map_free (c3->symbols);
@@ -309,9 +311,11 @@ ASTNode* c3_lookup_symbol (C3 *c3, char *symbol) {
 
 /* Add symbol */
 void c3_add_symbol (C3 *c3, char *symbol, ASTNode *n) {
+  printf ("Try add %s\n", symbol);
   if (!c3_map_find (c3->symbols, symbol)) {
     c3->symbol_num++;
   }
+  printf ("Add symbol %s\n", symbol);
   c3_map_set (c3->symbols, symbol, n);
 }
 
@@ -348,7 +352,14 @@ void c3_store_function(C3 *c3, char *name, ASTVec params, ASTNode* function) {
 }
 
 void c3_unsupported(C3 *c3) {
-  debug_log (-1, "unsupported¥n");
+  debug_log (-1, "unsupported\n");
+}
+
+void c3_add_assert (C3 *c3, ASTNode *assert) {
+  if (ast_get_type (assert) != BOOLEAN_TYPE) {
+    c3_fatal_error ("Add assert: Trying to assert a non-formula:\n");
+  }
+  c3_list_append (c3->asserts, assert);
 }
 
 int main(int argc, char **argv, char **envp) {

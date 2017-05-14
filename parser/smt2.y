@@ -161,6 +161,7 @@ commands: commands LPAREN_TOK cmdi RPAREN_TOK
 cmdi:
     ASSERT_TOK an_formula
     {
+      c3_add_assert (&c3, $2);
     }
 |
     CHECK_SAT_TOK
@@ -180,7 +181,6 @@ cmdi:
 |
     DECLARE_FUNCTION_TOK var_decl
     {
-
     }
 |
     DEFINE_FUNCTION_TOK function_def
@@ -247,7 +247,7 @@ cmdi:
 |
     NOTES_TOK attribute STRING_TOK
     {
-
+      free ($3);
     }
 |
     NOTES_TOK attribute DECIMAL_TOK
@@ -471,6 +471,7 @@ TRUE_TOK
 }
 | LPAREN_TOK BVSLT_TOK an_term an_term RPAREN_TOK
 {
+  printf ("bvslt\n");
   ASTNode *n = ast_create_node2 (BVSLT, $3, $4);
   $$ = n;
 }
@@ -597,7 +598,7 @@ TERMID_TOK
 }
 | STORE_TOK an_term an_term an_term
 {
-  //ARRAY WIRTE TODO
+  //ARRAY WRITE TODO
   $$ = NULL;
 }
 | LPAREN_TOK UNDERSCORE_TOK BVEXTRACT_TOK  NUMERAL_TOK  NUMERAL_TOK RPAREN_TOK an_term
@@ -607,13 +608,19 @@ TERMID_TOK
 }
 | LPAREN_TOK UNDERSCORE_TOK BVZX_TOK NUMERAL_TOK RPAREN_TOK an_term
 {
-  //zero expand TODO
-  $$ = NULL;
+  printf ("zero extend %d\n", $4);
+  const unsigned int width = $6->value_width + $4;
+  ASTNode *wnode = ast_create_bvc (32, width);
+  ASTNode *n = ast_create_node2w (BVZX, width, $6, wnode);
+  $$ = n;
 }
 | LPAREN_TOK UNDERSCORE_TOK BVSX_TOK NUMERAL_TOK RPAREN_TOK an_term
 {
-  //signed expand TODO
-  $$ = NULL;
+  const unsigned int width = $6->value_width + $4;
+  printf ("sign extend %d+%d=%d\n", $6->value_width, $4, width);
+  ASTNode *wnode = ast_create_bvc (32, width);
+  ASTNode *n = ast_create_node2w (BVSX, width, $6, wnode);
+  $$ = n;
 }
 | ITE_TOK an_formula an_term an_term
 {

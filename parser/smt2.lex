@@ -32,12 +32,18 @@
         free (cleaned);
       }
       yylval.node = ast_dup_node (sym_ast);
-      return FORMID_TOK;
+      if (ast_get_type (yylval.node) == BOOLEAN_TYPE) {
+        printf ("FORMID: %s\n", s);
+        return FORMID_TOK;
+      } else {
+      printf ("TERMID: %s\n", s);
+        return TERMID_TOK;
+      }
     } else {
       if (cleaned)
         free (cleaned);
       yylval.node = strdup (s);
-      //printf ("LITERAL: %s\n", s);
+      printf ("LITERAL: %s\n", s);
       return STRING_TOK;
     }
   }

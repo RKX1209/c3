@@ -26,6 +26,7 @@ typedef struct c3_t {
   int32_t valnum;
   int32_t disjnum;
   C3List *cnf; // <cnf[i] = i-th Disjunction>
+  C3List *asserts;
   C3Hmap *literals;
   C3BsTree *literals2;
   C3Map *symbols;
@@ -40,4 +41,5 @@ void c3_add_symbol(C3 *c3, char *symbol, ASTNode *n);
 ASTNode* c3_create_variable(int index_width, int value_width, char *name);
 void c3_store_function(C3 *c3, char *name, ASTVec params, ASTNode* function);
 void c3_unsupported(C3 *c3);
+void c3_add_assert (C3 *c3, ASTNode *assert);
 #endif
