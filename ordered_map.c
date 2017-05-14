@@ -27,6 +27,8 @@ C3MapIter *c3_map_add (C3Map *map, char *key, void *value) {
   if (!new) {
     return NULL;
   }
+  new->key = key;
+  new->value = value;
   iter = c3_bstree_add (map, new, c3_compare_pair);
   return iter;
 }
