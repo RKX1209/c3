@@ -240,6 +240,7 @@ cmdi:
 |
     LOGIC_TOK STRING_TOK
     {
+      printf ("LOGIC_TOK %s\n", $2);
       if (!(strcmp ($2,"QF_BV") == 0 || strcmp ($2,"QF_ABV") == 0 || strcmp ($2,"QF_AUFBV") == 0)) {
         yyerror ("Wrong input logic");
       }

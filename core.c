@@ -435,12 +435,12 @@ int main(int argc, char **argv, char **envp) {
       correct = c3_verify_sat (&c3, res);
     }
     printf ("Verifying.... [%s]\n", (correct ? "SUCCESS":"FAIL"));
+    free (res);
   } else {
     /* SMT mode */
     c3_smt2_parse (cnfp);
   }
   /* Finish */
   fclose (cnfp);
-  free (res);
   c3_fini (&c3);
 }

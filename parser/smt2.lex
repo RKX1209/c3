@@ -36,6 +36,8 @@
     } else {
       if (cleaned)
         free (cleaned);
+      yylval.node = strdup (s);
+      //printf ("LITERAL: %s\n", s);
       return STRING_TOK;
     }
   }
@@ -210,5 +212,7 @@ bv{DIGIT}+    { yylval.str = strdup(yytext + 2); return BVCONST_DECIMAL_TOK; }
 "store"         { return STORE_TOK; }
 
 ({LETTER}|{OPCHAR})({ANYTHING})* { return lookup (yytext); }
+\|([^\|]|\n)*\| { return lookup(yytext); }
+
 . { yyerror("Illegal input character."); }
 %%
