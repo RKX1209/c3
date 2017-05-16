@@ -4,7 +4,7 @@
 #include <c3_ordered_map.h>
 
 static int c3_compare_pair (const C3Pair *a, const C3Pair *b) {
-  printf ("compare: %s(%p), %s(%p)\n", a->key, (void*)a->key, b->key, (void*)b->key);
+  //printf ("compare: %s(%p), %s(%p)\n", a->key, (void*)a->key, b->key, (void*)b->key);
   int cmp = strcmp (a->key, b->key);
   if (cmp == 0) {
     return 0;

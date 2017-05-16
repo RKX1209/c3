@@ -176,3 +176,22 @@ void ast_bvc_resize (ASTBVConst *bvconst, unsigned int width) {
     bvconst->bits = newaddr;
   }
 }
+
+void ast_print(ASTNode *root) {
+  C3ListIter *iter;
+  ASTNode *node;
+  printf ("(");
+  if (root->kind) {
+    printf ("%s ", _kind_names[root->kind]);
+  } else if (root->name) {
+    printf ("%s ", root->name);
+  } else if (root->bvconst) {
+    printf ("bv%d", root->bvconst->size);
+  }else {
+    printf ("[?] ");
+  }
+  c3_list_foreach (root->children, iter, node) {
+    ast_print (node);
+  }
+  printf (")");
+}

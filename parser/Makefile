@@ -2,7 +2,7 @@
 BISON 		= 	bison
 FLEX			= 	flex
 FORMATS		=		smt2
-OBJS			+=	parser/parsecnf.o parser/parsesmt2.o parser/lexsmt2.o parser/ast.o
+OBJS			+=	parser/parsecnf.o parser/parsesmt2.o parser/lexsmt2.o parser/ast.o parser/astkind.o
 
 define generate_code
 	$(BISON) --debug -v -o parse$(1).c -d $(1).y

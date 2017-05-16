@@ -53,3 +53,5 @@ typedef enum {
   BITVECTOR,
   BOOLEAN
 } ASTKind;
+
+extern const char *_kind_names[];

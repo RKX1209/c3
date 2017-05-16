@@ -311,11 +311,11 @@ ASTNode* c3_lookup_symbol (C3 *c3, char *symbol) {
 
 /* Add symbol */
 void c3_add_symbol (C3 *c3, char *symbol, ASTNode *n) {
-  printf ("Try add %s\n", symbol);
   if (!c3_map_find (c3->symbols, symbol)) {
     c3->symbol_num++;
   }
   printf ("Add symbol %s\n", symbol);
+  n->name = symbol;
   c3_map_set (c3->symbols, symbol, n);
 }
 
@@ -356,10 +356,12 @@ void c3_unsupported(C3 *c3) {
 }
 
 void c3_add_assert (C3 *c3, ASTNode *assert) {
-  if (ast_get_type (assert) != BOOLEAN_TYPE) {
+  /* if (ast_get_type (assert) != BOOLEAN_TYPE) {
     c3_fatal_error ("Add assert: Trying to assert a non-formula:\n");
-  }
+  } */
   c3_list_append (c3->asserts, assert);
+  ast_print (assert);
+  printf("\n");
 }
 
 int main(int argc, char **argv, char **envp) {
