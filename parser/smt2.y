@@ -617,7 +617,7 @@ TERMID_TOK
 | LPAREN_TOK UNDERSCORE_TOK BVSX_TOK NUMERAL_TOK RPAREN_TOK an_term
 {
   const unsigned int width = $6->value_width + $4;
-  printf ("sign extend %d+%d=%d\n", $6->value_width, $4, width);
+  printf ("sign extend %d+%d=%d\n", $6->value_width, $4, width);  
   ASTNode *wnode = ast_create_bvc (32, width);
   ASTNode *n = ast_create_node2w (BVSX, width, $6, wnode);
   $$ = n;

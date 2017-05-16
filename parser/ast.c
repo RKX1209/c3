@@ -95,6 +95,7 @@ ASTNode* ast_dup_node(ASTNode* n) {
   new->index_width = n->index_width;
   new->name = n->name;
   new->bvconst = n->bvconst;
+  return new;
 }
 
 size_t ast_vec_size(ASTVec vec) {
