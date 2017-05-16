@@ -84,7 +84,7 @@ bv{DIGIT}+    { yylval.str = strdup(yytext + 2); return BVCONST_DECIMAL_TOK; }
                                       }
 <STRING_LITERAL>"\"\""	{ /* double quote is the only escape. */
                           size_t old = strlen (string_lit);
-                          if (!realloc (string_lit, old + 2)) {
+                          if (!(string_lit = realloc (string_lit, old + 2))) {
                             c3_fatal_error ("string expansion failed\n");
                           }
                           string_lit[old] = '"';
@@ -94,14 +94,14 @@ bv{DIGIT}+    { yylval.str = strdup(yytext + 2); return BVCONST_DECIMAL_TOK; }
                         return STRING_TOK; }
 <STRING_LITERAL>.	{
                     size_t old = strlen (string_lit);
-                    if (!realloc (string_lit, old + 2)) {
+                    if (!(string_lit = realloc (string_lit, old + 2))) {
                       c3_fatal_error ("string expansion failed\n");
                     }
                     string_lit[old] = *yytext;
                     string_lit[old + 1] = '\0'; }
 <STRING_LITERAL>"\n" {
                     size_t old = strlen (string_lit);
-                    if (!realloc (string_lit, old + 2)) {
+                    if (!(string_lit = realloc (string_lit, old + 2))) {
                       c3_fatal_error ("string expansion failed\n");
                     }
                     string_lit[old] = *yytext;
