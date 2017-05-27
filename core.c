@@ -10,6 +10,7 @@
 #include <c3_utils.h>
 #include <parser/parsecnf.h>
 #include <parser/parser.h>
+#include <tosat/bitblaster.h>
 
 typedef enum {
   SMTLIB2,
@@ -364,6 +365,11 @@ void c3_add_assert (C3 *c3, ASTNode *assert) {
   printf("\n");
 }
 
+void c3_solve_by_sat(C3 *c3, ASTNode *assertq) {
+  /* Bitblasting: Translate SMT operations to combinational logic */
+  c3_bitblast (c3, assertq);
+}
+
 int main(int argc, char **argv, char **envp) {
   int c;
   FILE* cnfp;
@@ -372,6 +378,8 @@ int main(int argc, char **argv, char **envp) {
   C3_STATUS status;
   bool correct = true;
   Format file_format;
+  ASTNode *assertq;
+  C3ListIter *iter;
   struct option longopts[] = {
     { "help", no_argument, NULL, 'h'},
     { "version", no_argument, NULL, 'v'},
@@ -452,6 +460,9 @@ int main(int argc, char **argv, char **envp) {
   } else {
     /* SMT mode */
     c3_smt2_parse (cnfp);
+    c3_list_foreach (c3.asserts, iter, assertq) {
+      c3_solve_by_sat (&c3, assertq);
+    }
   }
   /* Finish */
   fclose (cnfp);

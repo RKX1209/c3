@@ -33,6 +33,27 @@ ASTNode* ast_create_node(ASTKind kind, ASTVec children) {
   return node;
 }
 
+void ast_free_node (ASTNode *n) {
+  if (n->name) {
+    free (n->name);
+  }
+  if (n->bvconst) {
+    free (n->bvconst);
+  }
+}
+
+void ast_free_node_rec (ASTNode *root) {
+  C3ListIter *iter;
+  ASTNode *node;
+  if (!root->children) {
+    ast_free_node (root);
+  } else {
+    c3_list_foreach (root->children, iter, node) {
+      ast_free_node_rec (node);
+    }
+  }
+}
+
 ASTNode* ast_create_node0(ASTKind kind) {
   return ast_create_node (kind, NULL);
 }

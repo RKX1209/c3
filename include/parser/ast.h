@@ -34,6 +34,8 @@ ASTNode* ast_create_node1w(ASTKind kind, const unsigned int width, ASTNode *n);
 ASTNode* ast_create_node2(ASTKind kind, ASTNode* n1, ASTNode* n2);
 ASTNode* ast_create_node2w(ASTKind kind, const unsigned int width, ASTNode* n1, ASTNode* n2);
 ASTNode* ast_create_node3(ASTKind kind, ASTNode* n1, ASTNode* n2, ASTNode* n3);
+void ast_free_node (ASTNode *n);
+void ast_free_node_rec (ASTNode *root);
 ASTNode* ast_dup_node(ASTNode* n);
 void ast_del_node(ASTNode *n);
 ASTVec   ast_vec_new();
