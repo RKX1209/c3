@@ -26,8 +26,13 @@ ASTNode *c3_bitblast_form(C3 *c3, ASTNode *form) {
   const ASTKind k = form->kind;
   switch (k) {
     case TRUE:
+      result = bb->ASTTrue;
       break;
     case FALSE:
+      result = bb->ASTFalse;
+      break;
+    case NOT:
+
       break;
     default:
       break;

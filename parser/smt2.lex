@@ -42,7 +42,7 @@
     } else {
       if (cleaned)
         free (cleaned);
-      yylval.node = strdup (s);
+      yylval.str = strdup (s);
       printf ("LITERAL: %s\n", s);
       return STRING_TOK;
     }

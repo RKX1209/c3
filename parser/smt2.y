@@ -21,7 +21,7 @@
   unsigned uintval;
   char *str;
   ASTNode *node;
-  ASTVec *vec;
+  ASTVec vec;
 };
 
 %start cmd

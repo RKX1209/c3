@@ -32,7 +32,7 @@ static int help() {
   " -S [--SMTLIB2]\t\tuse the SMT-LIB2 format\n"
   " -D [--DIMACS]\t\tuse the SMT-LIB2 format\n"
   "\n";
-  printf (msg);
+  puts (msg);
   return 0;
 }
 
@@ -342,7 +342,7 @@ void c3_store_function(C3 *c3, char *name, ASTVec params, ASTNode* function) {
   }
   f->name = strdup (name);
   c3_list_foreach (params, iter, node) {
-    char buf = malloc (sizeof (char) * (strlen (prefix) + 34));
+    char *buf = malloc (sizeof (char) * (strlen (prefix) + 34));
     sprintf (buf, "%s_%d", prefix, c3->symbol_num);
     ASTNode *param = c3_create_variable (node->index_width, node->value_width, buf);
     ast_vec_add (f->params, param);
@@ -367,7 +367,7 @@ void c3_add_assert (C3 *c3, ASTNode *assert) {
 
 void c3_solve_by_sat(C3 *c3, ASTNode *assertq) {
   /* Bitblasting: Translate SMT operations to combinational logic */
-  c3_bitblast (c3, assertq);
+  //c3_bitblast (c3, assertq);
 }
 
 int main(int argc, char **argv, char **envp) {
