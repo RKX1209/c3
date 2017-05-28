@@ -9,7 +9,7 @@ typedef struct c3_bitblast_t {
 
 C3BitBlast *c3_bitblast_new();
 void c3_bitblast_free(C3BitBlast *bitblast);
-ASTNode *c3_bitblast_form(C3 *c3, ASTNode *form);
+ASTNode *c3_bitblast_form(ASTNode *form);
 void c3_bitblast(C3 *c3, ASTNode *assertq);
 
 #endif

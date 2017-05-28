@@ -207,7 +207,7 @@ void ast_print(ASTNode *root) {
   } else if (root->name) {
     printf ("%s ", root->name);
   } else if (root->bvconst) {
-    printf ("bv%d", root->bvconst->size);
+    printf ("bv%zu", root->bvconst->size);
   }else {
     printf ("[?] ");
   }
