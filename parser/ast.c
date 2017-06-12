@@ -198,6 +198,11 @@ void ast_bvc_resize (ASTBVConst *bvconst, unsigned int width) {
   }
 }
 
+bool ast_bvc_bit_test (ASTBVConst *bvconst, unsigned int index) {
+  unsigned char *bits = bvconst->bits;
+  return bits [index / 8] & (1 >> (index % 8));
+}
+
 void ast_print(ASTNode *root) {
   C3ListIter *iter;
   ASTNode *node;

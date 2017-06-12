@@ -1,6 +1,7 @@
 /* C3 Theorem Prover - Apache v2.0 - Copyright 2017 - rkx1209 */
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <c3_ordered_map.h>
 
 static int c3_compare_pair (const C3Pair *a, const C3Pair *b) {

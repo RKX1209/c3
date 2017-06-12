@@ -4,6 +4,7 @@
 #include <stdlib.h>
 
 C3BitBlast *bb;
+
 C3BitBlast *c3_bitblast_new() {
   C3BitBlast *bitblast;
   bitblast = (C3BitBlast *) malloc (sizeof (C3BitBlast));
@@ -52,8 +53,10 @@ ASTVec c3_bitblast_neg(ASTVec vec) {
   return result;
 }
 
-static ASTNode *c3_bitblast_cmp_internal (ASTVec left, ASTVec right, bool sign, bool bvlt) {
-  /* TODO: */
+static ASTNode *c3_bitblast_bvle (ASTVec left, ASTVec right, bool sign, bool bvlt) {
+  C3ListIter *lit, *rit;
+  lit = left->tail;
+  rit = right->tail;
   return NULL;
 }
 
@@ -66,40 +69,42 @@ ASTNode *c3_bitblast_cmp(ASTNode *form) {
   switch (k) {
     case BVLE:
      {
-       result = c3_bitblast_cmp_internal (left, right, false, false);
+       result = c3_bitblast_bvle (left, right, false, false);
        break;
      }
      case BVGE:
      {
-       result = c3_bitblast_cmp_internal (left, right, false, false);
+       result = c3_bitblast_bvle (right, left, false, false);
        break;
      }
      case BVGT:
      {
-       result = c3_bitblast_cmp_internal (right, left, false, true);
+       result = c3_bitblast_bvle (right, left, false, true);
        break;
      }
      case BVLT:
      {
-       result = c3_bitblast_cmp_internal (left, right, true, true);
+       result = c3_bitblast_bvle (left, right, false, true);
        break;
      }
      case BVSLE:
      {
-       result = c3_bitblast_cmp_internal (right, left, true, true);
+       result = c3_bitblast_bvle (left, right, true, false);
        break;
      }
      case BVSGE:
      {
-       result = c3_bitblast_cmp_internal (left, right, false, false);
+       result = c3_bitblast_bvle (right, left, true, false);
        break;
      }
      case BVSGT:
      {
+       //result = c3_bitblast_bvle (right, left, true, true);
        break;
      }
      case BVSLT:
      {
+       //result = c3_bitblast_bvle (left, right, true, true);
        break;
      }
      default:
@@ -111,11 +116,24 @@ ASTNode *c3_bitblast_cmp(ASTNode *form) {
 ASTVec c3_bitblast_term(ASTNode *term) {
   const ASTKind k = term->kind;
   ASTVec children = term->children, result;
+  unsigned int numbits = term->value_width;
+
   switch (k) {
     case BVNOT:
     {
       const ASTVec kids = c3_bitblast_term ((ASTNode *)children->head->data);
       result = c3_bitblast_neg (kids);
+      break;
+    }
+    case BVCONST:
+    {
+      ASTVec cnts = ast_vec_new ();
+      ASTBVConst *bvconst = term->bvconst;
+      unsigned int i;
+      for (i = 0; i < numbits; i++) {
+        ast_vec_add (cnts, ast_bvc_bit_test (bvconst, i) ? bb->ASTTrue : bb->ASTFalse);
+      }
+      result = cnts;
       break;
     }
     default:
@@ -125,9 +143,12 @@ ASTVec c3_bitblast_term(ASTNode *term) {
 }
 
 ASTNode *c3_bitblast_form(ASTNode *form) {
-  ASTNode *result;
+  ASTNode *result, *child;
   ASTVec children = form->children;
+  ASTVec echildren = ast_vec_new ();
+  C3ListIter *iter;
   const ASTKind k = form->kind;
+
   switch (k) {
     case TRUE:
       result = bb->ASTTrue;
@@ -136,10 +157,13 @@ ASTNode *c3_bitblast_form(ASTNode *form) {
       result = bb->ASTFalse;
       break;
     case NOT:
-      result = ast_create_node1 (NOT, (ASTNode *)children->head->data);
+      result = ast_create_node1 (NOT, c3_bitblast_form ((ASTNode *)children->head->data));
       break;
     case ITE:
-      result = ast_create_node3 (ITE, (ASTNode *)children->head->data, (ASTNode *)children->head->n->data, (ASTNode *)children->head->n->n->data);
+      result = ast_create_node3 (ITE,
+                                c3_bitblast_form ((ASTNode *)children->head->data),
+                                c3_bitblast_form ((ASTNode *)children->head->n->data),
+                                c3_bitblast_form ((ASTNode *)children->head->n->n->data));
       break;
     case AND:
     case OR:
@@ -148,7 +172,10 @@ ASTNode *c3_bitblast_form(ASTNode *form) {
     case IFF:
     case XOR:
     case IMPLIES:
-      result = ast_create_node (k, children);
+      c3_list_foreach (children, iter, child) {
+        c3_list_append (echildren, c3_bitblast_form (child));
+      }
+      result = ast_create_node (k, echildren);
       break;
     case EQ:
     {
@@ -177,6 +204,6 @@ ASTNode *c3_bitblast_form(ASTNode *form) {
 
 void c3_bitblast(C3 *c3, ASTNode *assertq) {
   bb = c3_bitblast_new ();
-  c3_bitblast_form (assertq);
+  assertq = c3_bitblast_form (assertq);
   c3_bitblast_free (bb);
 }

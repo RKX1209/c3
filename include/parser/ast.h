@@ -46,5 +46,6 @@ ASTNode* ast_create_bvc(unsigned int width, unsigned long long bvconst);
 ASTBVConst* ast_bvc_create(unsigned int bits);
 size_t   ast_bvc_size(unsigned int bits);
 void ast_bvc_resize(ASTBVConst *bvconst, unsigned int width);
+bool ast_bvc_bit_test (ASTBVConst *bvconst, unsigned int index);
 void ast_print(ASTNode *root);
 #endif

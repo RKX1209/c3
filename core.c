@@ -76,7 +76,7 @@ static void _c3_dpll_remove2 (C3 *c3, C3List *cnf, int32_t l) {
     if (fnd = c3_list_find (disj, (void*)&l, c3_compare_symbol)) {
       int32_t* found = c3_list_get_data (fnd);
       debug_log (2, "found: %d\n",*found);
-      if (l < 0 && *found < 0 || l > 0 && *found > 0) {
+      if ((l < 0 && *found < 0) || (l > 0 && *found > 0)) {
         /* same literal (same sign) */
         /* Delete all elements of list */
         c3_list_clear (disj);
