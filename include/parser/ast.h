@@ -42,6 +42,7 @@ ASTVec   ast_vec_new();
 ASTNode* ast_vec_add(ASTVec vec, ASTNode* node);
 size_t   ast_vec_size(ASTVec vec);
 Type     ast_get_type(ASTNode *node);
+ASTKind ast_get_kind(ASTNode *node);
 ASTNode* ast_create_bvc(unsigned int width, unsigned long long bvconst);
 ASTBVConst* ast_bvc_create(unsigned int bits);
 size_t   ast_bvc_size(unsigned int bits);

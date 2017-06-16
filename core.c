@@ -367,7 +367,10 @@ void c3_add_assert (C3 *c3, ASTNode *assert) {
 
 void c3_solve_by_sat(C3 *c3, ASTNode *assertq) {
   /* Bitblasting: Translate SMT operations to combinational logic */
-  //c3_bitblast (c3, assertq);
+  c3_bitblast (c3, assertq);
+  printf("Bitblast: \n");
+  ast_print (assertq);
+  printf("\n");
 }
 
 int main(int argc, char **argv, char **envp) {

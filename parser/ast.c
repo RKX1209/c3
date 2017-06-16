@@ -136,6 +136,17 @@ Type ast_get_type(ASTNode *node) {
   return UNKNOWN_TYPE;
 }
 
+ASTKind ast_get_kind(ASTNode *node) {
+  if (node->kind) {
+    return node->kind;
+  } else if (node->name) {
+    return SYMBOL;
+  } else if (node->bvconst) {
+    return BVCONST;
+  }
+  return -1;
+}
+
 ASTNode* ast_create_bvc(unsigned int width, unsigned long long bvconst) {
   if (width <= 0 || width > (sizeof (unsigned long long) * 8)) {
     c3_fatal_error ("CreateBVConst: trying to create bvconst of width %d", width);
