@@ -376,7 +376,7 @@ void c3_solve_by_sat(C3 *c3, ASTNode *assertq) {
 int main(int argc, char **argv, char **envp) {
   int c;
   FILE* cnfp;
-  char *cnf_path, *cnf;
+  char *cnf_path = NULL, *cnf;
   int32_t *res;
   C3_STATUS status;
   bool correct = true;
