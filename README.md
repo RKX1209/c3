@@ -1,6 +1,7 @@
 # C3
 The C3, SMT solver written in C.
 Currently WIP project...
+blog [article](https://rkx1209.hatenablog.com/entry/2017/12/17/175439)
 
 ## Usage(SAT solver)
 C3 has support for **DIMACS** file format as input for SAT solver.
